@@ -23,7 +23,6 @@ public class BaseEntity implements Serializable {
     @Id
 //    @GeneratedValue(generator = "uuid2")
     @GeneratedValue(strategy = GenerationType.UUID)
-
     @Column(length = 36, name = "id")
     protected String id;
 

@@ -1,6 +1,5 @@
 package com.example.docmate.entity;
 
-import com.example.docmate.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,7 +28,7 @@ public class UserEntity extends BaseEntity {
     @JoinColumn(name = "role_id", referencedColumnName = "id")
     private RoleEntity role;
 
-    @Column(name = "role_id")
+    @Column(name = "role_id",insertable = false, updatable = false)
     private String roleId;
 
     @Column(name = "status")
