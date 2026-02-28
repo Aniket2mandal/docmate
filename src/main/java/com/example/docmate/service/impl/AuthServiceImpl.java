@@ -106,7 +106,8 @@ public class AuthServiceImpl implements AuthService {
 
             String email = authentication.getName();
 
-            UserEntity userEntity = userRepository.findByUsername(email).orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+            UserEntity userEntity = userRepository.findByUsername(email)
+                    .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
             String token = jwtUtils.generateToken(email, userEntity.getRole().getName(), userEntity.getId());
 
