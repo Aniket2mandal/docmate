@@ -1,6 +1,7 @@
 package com.example.docmate.controller;
 
 import com.example.docmate.global.response.GlobalResponse;
+import com.example.docmate.payload.request.PatientRequest;
 import com.example.docmate.payload.request.UserRequest;
 import com.example.docmate.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -21,5 +22,10 @@ public class AuthController {
     @PostMapping("/register-admin")
     public ResponseEntity<GlobalResponse> registerAdmin(@RequestBody UserRequest user) {
          return ResponseEntity.ok(authService.registerAdmin(user));
+     }
+
+     @PostMapping("/register-patient")
+    public ResponseEntity<GlobalResponse> registerPatient(@RequestBody PatientRequest patient) {
+        return ResponseEntity.ok(authService.registerPatient(patient));
      }
 }

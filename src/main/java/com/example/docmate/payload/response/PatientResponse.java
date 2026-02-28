@@ -12,17 +12,21 @@ import lombok.Setter;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserResponse {
+public class PatientResponse {
 
-    private String id;
-    private String firstName;
-    private String lastName;
-    private String email;
+    private String patientId;
+    private int age;
+    private double weight;
+    private double height;
+    private UserResponse user;
+//    private String firstName;
+//    private String lastName;
+//    private String email;
 //    private String password;
-    private String gender;
-    private String phone;
-    private String address;
-    private Role role;
-//    private String roleId;
+//    private String gender;
+//    private String phone;
+//    private String address;
+//    private Role role;
+
 
 }
