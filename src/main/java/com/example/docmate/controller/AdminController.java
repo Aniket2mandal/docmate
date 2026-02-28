@@ -23,11 +23,6 @@ public class AdminController {
     }
     @GetMapping("/get-all/role")
     public ResponseEntity<GlobalResponse> getAllRole(){
-        try {
             return ResponseEntity.ok(adminService.getAllRole());
-        }
-        catch(GlobalException e){
-            throw new GlobalException(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
     }
 }
