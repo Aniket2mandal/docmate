@@ -31,7 +31,7 @@ public class JwtUtils {
     }
 
     // Generate JWT token
-    public String generateToken(String email, Role role, Long userId) {
+    public String generateToken(String email, Role role, String userId) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("role", role)
