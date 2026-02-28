@@ -32,6 +32,9 @@ public class PatientEntity extends BaseEntity {
     @Column(name = "height")
     private double height;
 
+    @Column(name= "image_url")
+    private String imageUrl;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private UserEntity user;

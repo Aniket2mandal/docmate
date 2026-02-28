@@ -64,6 +64,7 @@ public class AuthServiceImpl implements AuthService {
         patientEntity.setAge(patient.getAge());
         patientEntity.setHeight(patient.getHeight());
         patientEntity.setWeight(patient.getWeight());
+        patientEntity.setImageUrl(patient.getImageUrl());
         patientEntity.setUser(userEntity);
         patientRepository.save(patientEntity);
         return GlobalResponseBuilder.buildSuccessResponse("Patient registered successfully");
