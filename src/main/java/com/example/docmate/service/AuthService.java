@@ -7,4 +7,5 @@ import com.example.docmate.payload.request.UserRequest;
 public interface AuthService {
     GlobalResponse registerAdmin(UserRequest user);
     GlobalResponse registerPatient(PatientRequest patient);
+    GlobalResponse loginUser(UserRequest user);
 }

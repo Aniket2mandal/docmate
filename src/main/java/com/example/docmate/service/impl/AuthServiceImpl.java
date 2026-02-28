@@ -7,16 +7,24 @@ import com.example.docmate.enums.Role;
 import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
+import com.example.docmate.payload.request.LoginRequest;
 import com.example.docmate.payload.request.PatientRequest;
 import com.example.docmate.payload.request.UserRequest;
+import com.example.docmate.payload.response.LoginResponse;
 import com.example.docmate.repository.PatientRepository;
 import com.example.docmate.repository.RoleRepository;
 import com.example.docmate.repository.UserRepository;
 import com.example.docmate.service.AuthService;
+import com.example.docmate.utils.JwtUtils;
 import com.example.docmate.utils.MyConstants;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import static org.springframework.boot.autoconfigure.container.ContainerImageMetadata.isPresent;
@@ -30,6 +38,9 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PatientRepository patientRepository;
+    //    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
 
     public GlobalResponse registerAdmin(UserRequest user) {
 
@@ -39,8 +50,7 @@ public class AuthServiceImpl implements AuthService {
 //        }
 
         UserEntity userEntity = modelMapper.map(user, UserEntity.class);
-        RoleEntity roleEntity = roleRepository.findByName(Role.ADMIN)
-                .orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+        RoleEntity roleEntity = roleRepository.findByName(Role.ADMIN).orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
         userEntity.setRole(roleEntity);
 
         userRepository.save(userEntity);
@@ -53,20 +63,63 @@ public class AuthServiceImpl implements AuthService {
         if (!isEmpty(patient.getUser()) && patient.getUser() != null) {
             userEntity = modelMapper.map(patient.getUser(), UserEntity.class);
 
-            RoleEntity roleEntity = roleRepository.findByName(Role.PATIENT)
-                    .orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+            RoleEntity roleEntity = roleRepository.findByName(Role.PATIENT).orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
             userEntity.setRole(roleEntity);
 
             userRepository.save(userEntity);
         }
-        PatientEntity patientEntity = new PatientEntity();
-        patientEntity.setAge(patient.getAge());
-        patientEntity.setHeight(patient.getHeight());
-        patientEntity.setWeight(patient.getWeight());
-        patientEntity.setImageUrl(patient.getImageUrl());
-        patientEntity.setUser(userEntity);
+//        PatientEntity patientEntity = new PatientEntity();
+//        patientEntity.setAge(patient.getAge());
+//        patientEntity.setHeight(patient.getHeight());
+//        patientEntity.setWeight(patient.getWeight());
+//        patientEntity.setImageUrl(patient.getImageUrl());
+//        patientEntity.setUser(userEntity);
+
+
+        //USING BUILDER METHOD
+        PatientEntity patientEntity = PatientEntity.builder()
+                .age(patient.getAge())
+                .height(patient.getHeight())
+                .weight(patient.getWeight())
+                .imageUrl(patient.getImageUrl())
+                .user(userEntity)
+                .build();
+
         patientRepository.save(patientEntity);
         return GlobalResponseBuilder.buildSuccessResponse("Patient registered successfully");
+    }
+
+    public GlobalResponse loginUser(UserRequest user) {
+
+//        UserEntity userEntity = userRepository.findByUsername(user.getEmail())
+//                .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+//
+//        if(!passwordEncoder.matches(user.getPassword(), userEntity.getPassword())){
+//            throw new GlobalException(MyConstants.ERR_MSG_INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
+//        }
+
+
+        try {
+            //this will check both existance and password matching
+            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
+
+            String email = authentication.getName();
+
+            UserEntity userEntity = userRepository.findByUsername(email).orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+            String token = jwtUtils.generateToken(email, userEntity.getRole().getName(), userEntity.getId());
+
+            LoginResponse loginResponse = LoginResponse.builder()
+                    .token(token)
+                    .userId(userEntity.getId())
+                    .email(email)
+                    .role(userEntity.getRole().getName())
+                    .build();
+
+            return GlobalResponseBuilder.buildSuccessResponseWithData("Login successful", loginResponse);
+        } catch (BadCredentialsException e) {
+            throw new GlobalException(MyConstants.ERR_MSG_INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
+        }
     }
 }
