@@ -13,7 +13,7 @@ public class GlobalExceptionHandler {
 //    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(GlobalException.class)
-    public ResponseEntity<GlobalResponse> handleRemitsException(GlobalException e) {
+    public ResponseEntity<GlobalResponse> handleGlobalException(GlobalException e) {
         GlobalResponse response = GlobalResponseBuilder.buildErrorResponse(e);
         return ResponseEntity.status(e.getHttpStatus())
                 .body(response);
