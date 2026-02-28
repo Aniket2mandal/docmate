@@ -32,6 +32,6 @@ public class AuthController {
 
      @PostMapping("/login-user")
     public ResponseEntity<GlobalResponse> loginUser(@RequestBody UserRequest user) {
-
+        return ResponseEntity.ok(authService.loginUser(user));
      }
 }
