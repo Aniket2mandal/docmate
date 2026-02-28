@@ -18,6 +18,7 @@ public class PatientResponse {
     private int age;
     private double weight;
     private double height;
+    private String imageUrl;
     private UserResponse user;
 //    private String firstName;
 //    private String lastName;

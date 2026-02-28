@@ -25,7 +25,8 @@ public class AuthController {
      }
 
      @PostMapping("/register-patient")
-    public ResponseEntity<GlobalResponse> registerPatient(@RequestBody PatientRequest patient) {
+    public ResponseEntity<GlobalResponse> registerPatient(@RequestBody PatientRequest patient,@RequestParam String imageUrl ) {
+        patient.setImageUrl(imageUrl);
         return ResponseEntity.ok(authService.registerPatient(patient));
      }
 }

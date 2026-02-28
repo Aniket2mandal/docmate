@@ -17,4 +17,5 @@ public class PatientRequest {
     private int age;
     private double weight;
     private double height;
+    private String imageUrl;
 }
