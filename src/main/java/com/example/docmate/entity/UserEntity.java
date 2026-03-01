@@ -41,6 +41,9 @@ public class UserEntity extends BaseEntity {
     @Column(name="address")
     private String address;
 
+    @Column(name= "image_url")
+    private String imageUrl;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", referencedColumnName = "id")
     private RoleEntity role;

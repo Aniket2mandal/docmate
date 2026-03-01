@@ -27,6 +27,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
 
 import static org.springframework.boot.autoconfigure.container.ContainerImageMetadata.isPresent;
 import static org.springframework.util.ObjectUtils.isEmpty;
@@ -53,7 +60,7 @@ public class AuthServiceImpl implements AuthService {
         //Request ra entity ma name same vaena vane yo method le issue falxa modelMapper bala le
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
 
-            throw new GlobalException("User with email " + user.getEmail() +" "+ MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+            throw new GlobalException("User with email " + user.getEmail() + " " + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
         }
 
         RoleEntity roleEntity = roleRepository.findByName(Role.ADMIN).orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -82,10 +89,12 @@ public class AuthServiceImpl implements AuthService {
 //            userEntity = modelMapper.map(patient.getUser(), UserEntity.class);
 
             if (userRepository.findByEmail(patient.getUser().getEmail()).isPresent()) {
-                throw new GlobalException("User with email " + patient.getUser().getEmail() +" "+ MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+                throw new GlobalException("User with email " + patient.getUser().getEmail() + " "
+                        + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
             }
 
-            RoleEntity roleEntity = roleRepository.findByName(Role.PATIENT).orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+            RoleEntity roleEntity = roleRepository.findByName(Role.PATIENT)
+                    .orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
             userEntity = UserEntity.builder()
                     .firstName(patient.getUser().getFirstName())
@@ -113,7 +122,6 @@ public class AuthServiceImpl implements AuthService {
                 .age(patient.getAge())
                 .height(patient.getHeight())
                 .weight(patient.getWeight())
-                .imageUrl(patient.getImageUrl())
                 .user(userEntity)
                 .build();
 
@@ -130,10 +138,10 @@ public class AuthServiceImpl implements AuthService {
 //        if(!passwordEncoder.matches(user.getPassword(), userEntity.getPassword())){
 //            throw new GlobalException(MyConstants.ERR_MSG_INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
 //        }
-
         try {
             //this will check both existance and password matching
-            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
+            Authentication authentication = authenticationManager
+                    .authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
 
             String email = authentication.getName();
 
@@ -152,6 +160,28 @@ public class AuthServiceImpl implements AuthService {
             return GlobalResponseBuilder.buildSuccessResponseWithData("Login successful", loginResponse);
         } catch (BadCredentialsException e) {
             throw new GlobalException(MyConstants.ERR_MSG_INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    public GlobalResponse uploadUserImage(String userId, MultipartFile file) {
+
+        try {
+            UserEntity userEntity = userRepository.findById(userId)
+                    .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+            String uploadDir = "uploads/user/";
+            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+
+            Path filePath = Paths.get(uploadDir + fileName);
+
+            Files.createDirectories(filePath.getParent());
+            Files.write(filePath, file.getBytes());
+
+            userEntity.setImageUrl(file.getOriginalFilename());
+
+            return null;
+        }catch(IOException e){
+            throw new RuntimeException(e.getMessage());
         }
     }
 }
