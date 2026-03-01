@@ -18,6 +18,7 @@ import com.example.docmate.service.AuthService;
 import com.example.docmate.utils.JwtUtils;
 import com.example.docmate.utils.MyConstants;
 import lombok.RequiredArgsConstructor;
+import org.apache.catalina.User;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,6 +27,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
 
 import static org.springframework.boot.autoconfigure.container.ContainerImageMetadata.isPresent;
 import static org.springframework.util.ObjectUtils.isEmpty;
@@ -38,7 +46,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PatientRepository patientRepository;
-    //    private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
 
@@ -49,23 +57,57 @@ public class AuthServiceImpl implements AuthService {
 //                    .orElseThrow(()-> new GlobalException("Role "+MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 //        }
 
-        UserEntity userEntity = modelMapper.map(user, UserEntity.class);
-        RoleEntity roleEntity = roleRepository.findByName(Role.ADMIN).orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
-        userEntity.setRole(roleEntity);
+        //Request ra entity ma name same vaena vane yo method le issue falxa modelMapper bala le
+        if (userRepository.existsByEmail(user.getEmail())) {
+
+            throw new GlobalException("User with email " + user.getEmail() + " "
+                    + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+        }
+
+        RoleEntity roleEntity = roleRepository.findByName(Role.ADMIN)
+                .orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        UserEntity userEntity = UserEntity.builder()
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .password(passwordEncoder.encode(user.getPassword()))
+                .gender(user.getGender())
+                .phone(user.getPhone())
+                .address(user.getAddress())
+                .role(roleEntity)
+                .build();
 
         userRepository.save(userEntity);
 
         return GlobalResponseBuilder.buildSuccessResponse("User registered successfully");
     }
 
+
     public GlobalResponse registerPatient(PatientRequest patient) {
+
         UserEntity userEntity = null;
         if (!isEmpty(patient.getUser()) && patient.getUser() != null) {
-            userEntity = modelMapper.map(patient.getUser(), UserEntity.class);
+//            userEntity = modelMapper.map(patient.getUser(), UserEntity.class);
 
-            RoleEntity roleEntity = roleRepository.findByName(Role.PATIENT).orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+            if (userRepository.existsByEmail(patient.getUser().getEmail())) {
+                throw new GlobalException("User with email " + patient.getUser().getEmail() + " "
+                        + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+            }
 
-            userEntity.setRole(roleEntity);
+            RoleEntity roleEntity = roleRepository.findByName(Role.PATIENT)
+                    .orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+            userEntity = UserEntity.builder()
+                    .firstName(patient.getUser().getFirstName())
+                    .lastName(patient.getUser().getLastName())
+                    .email(patient.getUser().getEmail())
+                    .password(passwordEncoder.encode(patient.getUser().getPassword()))
+                    .gender(patient.getUser().getGender())
+                    .phone(patient.getUser().getPhone())
+                    .address(patient.getUser().getAddress())
+                    .role(roleEntity)
+                    .build();
 
             userRepository.save(userEntity);
         }
@@ -82,7 +124,6 @@ public class AuthServiceImpl implements AuthService {
                 .age(patient.getAge())
                 .height(patient.getHeight())
                 .weight(patient.getWeight())
-                .imageUrl(patient.getImageUrl())
                 .user(userEntity)
                 .build();
 
@@ -90,7 +131,8 @@ public class AuthServiceImpl implements AuthService {
         return GlobalResponseBuilder.buildSuccessResponse("Patient registered successfully");
     }
 
-    public GlobalResponse loginUser(UserRequest user) {
+
+    public GlobalResponse loginUser(LoginRequest loginRequest) {
 
 //        UserEntity userEntity = userRepository.findByUsername(user.getEmail())
 //                .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -98,29 +140,59 @@ public class AuthServiceImpl implements AuthService {
 //        if(!passwordEncoder.matches(user.getPassword(), userEntity.getPassword())){
 //            throw new GlobalException(MyConstants.ERR_MSG_INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
 //        }
-
-
         try {
             //this will check both existance and password matching
-            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
+//            Authentication authentication = authenticationManager
+//                    .authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
-            String email = authentication.getName();
 
-            UserEntity userEntity = userRepository.findByEmail(email)
+            UserEntity userEntity = userRepository.findByEmail(loginRequest.getUsername())
                     .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-            String token = jwtUtils.generateToken(email, userEntity.getRole().getName(), userEntity.getId());
+            if (!passwordEncoder.matches(loginRequest.getPassword(), userEntity.getPassword())) {
+                throw new GlobalException(MyConstants.ERR_MSG_INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
+            }
+
+//            String email = authentication.getName();
+//
+//            UserEntity userEntity = userRepository.findByEmail(email)
+//                    .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+            String token = jwtUtils.generateToken(userEntity.getEmail(), userEntity.getRole().getName(), userEntity.getId());
 
             LoginResponse loginResponse = LoginResponse.builder()
                     .token(token)
                     .userId(userEntity.getId())
-                    .email(email)
+                    .email(userEntity.getEmail())
                     .role(userEntity.getRole().getName())
                     .build();
 
             return GlobalResponseBuilder.buildSuccessResponseWithData("Login successful", loginResponse);
         } catch (BadCredentialsException e) {
             throw new GlobalException(MyConstants.ERR_MSG_INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    public GlobalResponse uploadUserImage(String userId, MultipartFile file) {
+
+        try {
+            UserEntity userEntity = userRepository.findById(userId)
+                    .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+            String uploadDir = "uploads/user/" + userId + "/";
+            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+
+            Path filePath = Paths.get(uploadDir + fileName);
+
+            Files.createDirectories(filePath.getParent());
+            Files.write(filePath, file.getBytes());
+
+            userEntity.setImageUrl(uploadDir + fileName);
+            userRepository.save(userEntity);
+
+            return GlobalResponseBuilder.buildSuccessResponse("Image uploaded successfully");
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
         }
     }
 }
