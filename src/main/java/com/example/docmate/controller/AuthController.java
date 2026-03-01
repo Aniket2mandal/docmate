@@ -33,9 +33,9 @@ public class AuthController {
         return ResponseEntity.ok(authService.registerPatient(patient));
      }
 
-     @PostMapping(value="/upload-user-image", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+     @PostMapping(value="/upload-user-image/{userId}", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<GlobalResponse> uploadUserImage(@PathVariable("userId") String userId,
-                                                          @RequestParam(value = "file", required = false) MultipartFile file){
+                                                          @RequestPart(value = "file", required = false) MultipartFile file){
         return ResponseEntity.ok(authService.uploadUserImage(userId, file));
      }
 

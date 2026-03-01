@@ -58,12 +58,14 @@ public class AuthServiceImpl implements AuthService {
 //        }
 
         //Request ra entity ma name same vaena vane yo method le issue falxa modelMapper bala le
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+        if (userRepository.existsByEmail(user.getEmail())) {
 
-            throw new GlobalException("User with email " + user.getEmail() + " " + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+            throw new GlobalException("User with email " + user.getEmail() + " "
+                    + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
         }
 
-        RoleEntity roleEntity = roleRepository.findByName(Role.ADMIN).orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+        RoleEntity roleEntity = roleRepository.findByName(Role.ADMIN)
+                .orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         UserEntity userEntity = UserEntity.builder()
                 .firstName(user.getFirstName())
@@ -88,7 +90,7 @@ public class AuthServiceImpl implements AuthService {
         if (!isEmpty(patient.getUser()) && patient.getUser() != null) {
 //            userEntity = modelMapper.map(patient.getUser(), UserEntity.class);
 
-            if (userRepository.findByEmail(patient.getUser().getEmail()).isPresent()) {
+            if (userRepository.existsByEmail(patient.getUser().getEmail())) {
                 throw new GlobalException("User with email " + patient.getUser().getEmail() + " "
                         + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
             }
@@ -169,7 +171,7 @@ public class AuthServiceImpl implements AuthService {
             UserEntity userEntity = userRepository.findById(userId)
                     .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-            String uploadDir = "uploads/user/";
+            String uploadDir = "uploads/user/"+userId+"/";
             String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
 
             Path filePath = Paths.get(uploadDir + fileName);
@@ -177,9 +179,10 @@ public class AuthServiceImpl implements AuthService {
             Files.createDirectories(filePath.getParent());
             Files.write(filePath, file.getBytes());
 
-            userEntity.setImageUrl(file.getOriginalFilename());
+            userEntity.setImageUrl(uploadDir + fileName);
+            userRepository.save(userEntity);
 
-            return null;
+            return GlobalResponseBuilder.buildSuccessResponse("Image uploaded successfully");
         }catch(IOException e){
             throw new RuntimeException(e.getMessage());
         }
