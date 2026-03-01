@@ -53,7 +53,7 @@ public class AuthServiceImpl implements AuthService {
         //Request ra entity ma name same vaena vane yo method le issue falxa modelMapper bala le
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
 
-            throw new GlobalException("User with email " + user.getEmail() + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+            throw new GlobalException("User with email " + user.getEmail() +" "+ MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
         }
 
         RoleEntity roleEntity = roleRepository.findByName(Role.ADMIN).orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -82,7 +82,7 @@ public class AuthServiceImpl implements AuthService {
 //            userEntity = modelMapper.map(patient.getUser(), UserEntity.class);
 
             if (userRepository.findByEmail(patient.getUser().getEmail()).isPresent()) {
-                throw new GlobalException("User with email " + patient.getUser().getEmail() + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+                throw new GlobalException("User with email " + patient.getUser().getEmail() +" "+ MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
             }
 
             RoleEntity roleEntity = roleRepository.findByName(Role.PATIENT).orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -121,6 +121,7 @@ public class AuthServiceImpl implements AuthService {
         return GlobalResponseBuilder.buildSuccessResponse("Patient registered successfully");
     }
 
+
     public GlobalResponse loginUser(UserRequest user) {
 
 //        UserEntity userEntity = userRepository.findByUsername(user.getEmail())
@@ -129,7 +130,6 @@ public class AuthServiceImpl implements AuthService {
 //        if(!passwordEncoder.matches(user.getPassword(), userEntity.getPassword())){
 //            throw new GlobalException(MyConstants.ERR_MSG_INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
 //        }
-
 
         try {
             //this will check both existance and password matching

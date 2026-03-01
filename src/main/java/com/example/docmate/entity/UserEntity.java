@@ -28,7 +28,8 @@ public class UserEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private UserStatus status=UserStatus.ACTIVE;
+    @Builder.Default
+    private UserStatus status=UserStatus.ACTIVE;  //if you are using builder it will not work because builder will override the default value so you have to set it in builder as well so add  @Builder.default
 
     @Enumerated(EnumType.STRING)
     @Column(name="gender")
