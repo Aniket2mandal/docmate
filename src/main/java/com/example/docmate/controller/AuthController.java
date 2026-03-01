@@ -1,6 +1,7 @@
 package com.example.docmate.controller;
 
 import com.example.docmate.global.response.GlobalResponse;
+import com.example.docmate.payload.request.LoginRequest;
 import com.example.docmate.payload.request.PatientRequest;
 import com.example.docmate.payload.request.UserRequest;
 import com.example.docmate.service.AuthService;
@@ -40,7 +41,7 @@ public class AuthController {
      }
 
      @PostMapping("/login-user")
-    public ResponseEntity<GlobalResponse> loginUser(@RequestBody UserRequest user) {
-        return ResponseEntity.ok(authService.loginUser(user));
+    public ResponseEntity<GlobalResponse> loginUser(@RequestBody LoginRequest loginRequest) {
+        return ResponseEntity.ok(authService.loginUser(loginRequest));
      }
 }

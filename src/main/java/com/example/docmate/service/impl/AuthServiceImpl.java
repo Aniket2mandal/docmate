@@ -132,7 +132,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
 
-    public GlobalResponse loginUser(UserRequest user) {
+    public GlobalResponse loginUser(LoginRequest loginRequest) {
 
 //        UserEntity userEntity = userRepository.findByUsername(user.getEmail())
 //                .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -142,20 +142,28 @@ public class AuthServiceImpl implements AuthService {
 //        }
         try {
             //this will check both existance and password matching
-            Authentication authentication = authenticationManager
-                    .authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
+//            Authentication authentication = authenticationManager
+//                    .authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
-            String email = authentication.getName();
 
-            UserEntity userEntity = userRepository.findByEmail(email)
+            UserEntity userEntity = userRepository.findByEmail(loginRequest.getUsername())
                     .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-            String token = jwtUtils.generateToken(email, userEntity.getRole().getName(), userEntity.getId());
+            if (!passwordEncoder.matches(loginRequest.getPassword(), userEntity.getPassword())) {
+                throw new GlobalException(MyConstants.ERR_MSG_INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
+            }
+
+//            String email = authentication.getName();
+//
+//            UserEntity userEntity = userRepository.findByEmail(email)
+//                    .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+            String token = jwtUtils.generateToken(userEntity.getEmail(), userEntity.getRole().getName(), userEntity.getId());
 
             LoginResponse loginResponse = LoginResponse.builder()
                     .token(token)
                     .userId(userEntity.getId())
-                    .email(email)
+                    .email(userEntity.getEmail())
                     .role(userEntity.getRole().getName())
                     .build();
 
@@ -171,7 +179,7 @@ public class AuthServiceImpl implements AuthService {
             UserEntity userEntity = userRepository.findById(userId)
                     .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-            String uploadDir = "uploads/user/"+userId+"/";
+            String uploadDir = "uploads/user/" + userId + "/";
             String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
 
             Path filePath = Paths.get(uploadDir + fileName);
@@ -183,7 +191,7 @@ public class AuthServiceImpl implements AuthService {
             userRepository.save(userEntity);
 
             return GlobalResponseBuilder.buildSuccessResponse("Image uploaded successfully");
-        }catch(IOException e){
+        } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
         }
     }
