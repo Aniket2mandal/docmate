@@ -18,6 +18,7 @@ import com.example.docmate.service.AuthService;
 import com.example.docmate.utils.JwtUtils;
 import com.example.docmate.utils.MyConstants;
 import lombok.RequiredArgsConstructor;
+import org.apache.catalina.User;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -38,7 +39,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PatientRepository patientRepository;
-    //    private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
 
@@ -49,23 +50,53 @@ public class AuthServiceImpl implements AuthService {
 //                    .orElseThrow(()-> new GlobalException("Role "+MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 //        }
 
-        UserEntity userEntity = modelMapper.map(user, UserEntity.class);
+        //Request ra entity ma name same vaena vane yo method le issue falxa modelMapper bala le
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+
+            throw new GlobalException("User with email " + user.getEmail() + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+        }
+
         RoleEntity roleEntity = roleRepository.findByName(Role.ADMIN).orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
-        userEntity.setRole(roleEntity);
+
+        UserEntity userEntity = UserEntity.builder()
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .password(passwordEncoder.encode(user.getPassword()))
+                .gender(user.getGender())
+                .phone(user.getPhone())
+                .address(user.getAddress())
+                .role(roleEntity)
+                .build();
 
         userRepository.save(userEntity);
 
         return GlobalResponseBuilder.buildSuccessResponse("User registered successfully");
     }
 
+
     public GlobalResponse registerPatient(PatientRequest patient) {
+
         UserEntity userEntity = null;
         if (!isEmpty(patient.getUser()) && patient.getUser() != null) {
-            userEntity = modelMapper.map(patient.getUser(), UserEntity.class);
+//            userEntity = modelMapper.map(patient.getUser(), UserEntity.class);
+
+            if (userRepository.findByEmail(patient.getUser().getEmail()).isPresent()) {
+                throw new GlobalException("User with email " + patient.getUser().getEmail() + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+            }
 
             RoleEntity roleEntity = roleRepository.findByName(Role.PATIENT).orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-            userEntity.setRole(roleEntity);
+            userEntity = UserEntity.builder()
+                    .firstName(patient.getUser().getFirstName())
+                    .lastName(patient.getUser().getLastName())
+                    .email(patient.getUser().getEmail())
+                    .password(passwordEncoder.encode(patient.getUser().getPassword()))
+                    .gender(patient.getUser().getGender())
+                    .phone(patient.getUser().getPhone())
+                    .address(patient.getUser().getAddress())
+                    .role(roleEntity)
+                    .build();
 
             userRepository.save(userEntity);
         }

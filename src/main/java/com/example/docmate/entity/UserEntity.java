@@ -30,6 +30,7 @@ public class UserEntity extends BaseEntity {
     @Column(name = "status")
     private UserStatus status=UserStatus.ACTIVE;
 
+    @Enumerated(EnumType.STRING)
     @Column(name="gender")
     private Gender gender;
 
