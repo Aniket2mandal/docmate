@@ -19,7 +19,7 @@ public class PatientResponse {
     private double weight;
     private double height;
     private String imageUrl;
-    private UserResponse user;
+//    private UserResponse user;
 //    private String firstName;
 //    private String lastName;
 //    private String email;
