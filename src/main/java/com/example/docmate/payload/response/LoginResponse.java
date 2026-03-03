@@ -19,6 +19,7 @@ public class LoginResponse {
     private String userId;
     private String email;
     private Role role;
-    private String token;
+    private String accessToken;
+    private String refreshToken;
     private String tokenType = "Bearer";
 }
