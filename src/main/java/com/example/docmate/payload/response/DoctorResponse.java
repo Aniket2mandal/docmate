@@ -11,7 +11,7 @@ import lombok.*;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DoctorResponse {
-    private UserRequest user;
+    private UserResponse user;
     private String specialization;
     private double experience;
     private String qualification;

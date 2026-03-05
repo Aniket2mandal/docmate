@@ -23,7 +23,7 @@ public class UserResponse {
     private String phone;
     private String address;
     private Role role;
-    private PatientResponse patientCore;
+//    private PatientResponse patientCore;
 //    private DoctorResponse doctorCore;
 //    private String roleId;
 

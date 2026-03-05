@@ -9,6 +9,9 @@ import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
 import com.example.docmate.payload.request.DoctorRequest;
+import com.example.docmate.payload.response.DoctorResponse;
+import com.example.docmate.payload.response.RoleResponse;
+import com.example.docmate.payload.response.UserResponse;
 import com.example.docmate.repository.DoctorRepository;
 import com.example.docmate.repository.RoleRepository;
 import com.example.docmate.repository.UserRepository;
@@ -19,6 +22,8 @@ import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 import static org.springframework.util.ObjectUtils.isEmpty;
 
@@ -68,5 +73,25 @@ public class DoctorServiceImpl implements DoctorService {
         doctorEntity.setUser(userEntity);
         doctorRepository.save(doctorEntity);
         return GlobalResponseBuilder.buildSuccessResponse("Doctor created successfully");
+    }
+    public GlobalResponse getAllDoctor(){
+        List<DoctorEntity> doctorEntityList= doctorRepository.findAll();
+List<DoctorResponse> doctorResponseList=doctorEntityList.stream()
+        .map(doctor -> {
+                DoctorResponse doctorResponse=modelMapper.map(doctor,DoctorResponse.class);
+        if(doctor.getUser()!=null){
+            UserResponse userResponse =modelMapper.map(doctor.getUser(), UserResponse.class);
+            if(doctor.getUser().getRole()!= null){
+                RoleResponse roleResponse=modelMapper.map(doctor.getUser().getRole() ,RoleResponse.class);
+                userResponse.setRole(roleResponse.getName());
+            }
+            doctorResponse.setUser(userResponse);
+        }
+        return doctorResponse;
+        }).toList();
+
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("All doctor fetched successfully",doctorEntityList);
+
     }
 }
