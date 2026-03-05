@@ -91,7 +91,7 @@ List<DoctorResponse> doctorResponseList=doctorEntityList.stream()
         }).toList();
 
 
-        return GlobalResponseBuilder.buildSuccessResponseWithData("All doctor fetched successfully",doctorEntityList);
+        return GlobalResponseBuilder.buildSuccessResponseWithData("All doctor fetched successfully",doctorResponseList);
 
     }
 }
