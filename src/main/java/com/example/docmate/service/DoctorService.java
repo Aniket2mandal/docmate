@@ -7,4 +7,5 @@ import com.example.docmate.payload.request.DoctorRequest;
 
 public interface DoctorService {
     GlobalResponse createDoctor(DoctorRequest doctor);
+    GlobalResponse getAllDoctor();
 }
