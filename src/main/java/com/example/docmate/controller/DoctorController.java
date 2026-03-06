@@ -1,8 +1,10 @@
 package com.example.docmate.controller;
 
 import com.example.docmate.entity.DoctorEntity;
+import com.example.docmate.enums.UserStatus;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.payload.request.DoctorRequest;
+import com.example.docmate.payload.request.UserRequest;
 import com.example.docmate.service.DoctorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,4 +26,12 @@ public class DoctorController {
     public ResponseEntity<GlobalResponse> getAllDoctor(){
         return ResponseEntity.ok(doctorService.getAllDoctor());
     }
+    @GetMapping("/get-doctor/{id}")
+public ResponseEntity<GlobalResponse> getDoctorById(@PathVariable String id){
+        return ResponseEntity.ok(doctorService.getDoctorById(id));
+    }
+@PutMapping("/change-status/{userId}")
+    public ResponseEntity<GlobalResponse> changeStatus(@RequestBody UserRequest user, @PathVariable String id){
+        return ResponseEntity.ok(doctorService.changeStatus(user, id));
+}
 }

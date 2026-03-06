@@ -29,26 +29,26 @@ public class UserEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
-    private UserStatus status=UserStatus.ACTIVE;  //if you are using builder it will not work because builder will override the default value so you have to set it in builder as well so add  @Builder.default
+    private UserStatus status = UserStatus.ACTIVE;  //if you are using builder it will not work because builder will override the default value so you have to set it in builder as well so add  @Builder.default
 
     @Enumerated(EnumType.STRING)
-    @Column(name="gender")
+    @Column(name = "gender")
     private Gender gender;
 
-    @Column(name="phone")
+    @Column(name = "phone")
     private String phone;
 
-    @Column(name="address")
+    @Column(name = "address")
     private String address;
 
-    @Column(name= "image_url")
+    @Column(name = "image_url")
     private String imageUrl;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", referencedColumnName = "id")
     private RoleEntity role;
 
-    @Column(name = "role_id",insertable = false, updatable = false)
+    @Column(name = "role_id", insertable = false, updatable = false)
     private String roleId;
 
 }

@@ -1,6 +1,7 @@
 package com.example.docmate.payload.request;
 
 import com.example.docmate.enums.Gender;
+import com.example.docmate.enums.UserStatus;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,5 +21,6 @@ public class UserRequest {
     private Gender gender;
     private String phone;
     private String address;
+    private UserStatus status;
 //    private String roleId;
 }
