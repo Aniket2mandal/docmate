@@ -116,12 +116,30 @@ public class DoctorServiceImpl implements DoctorService {
         return GlobalResponseBuilder.buildSuccessResponseWithData("Doctor fetched successfully", doctorResponse);
     }
     @Override
-    public GlobalResponse changeStatus(UserRequest user, String id) {
-        UserEntity userEntity = userRepository.findById(id)
+    public GlobalResponse changeStatus(UserRequest user, String userId) {
+        UserEntity userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
         userEntity.setStatus(user.getStatus());
         userRepository.save(userEntity);
         return  GlobalResponseBuilder.buildSuccessResponse("User status changed");
     }
+    @Override
+    public  GlobalResponse updateDoctor (DoctorRequest doctorRequest, String doctorId, String userId ){
+        DoctorEntity doctorEntity=doctorRepository.findById(doctorId)
+                .orElseThrow(()-> new GlobalException("Doctor "+ MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+        if(doctorRequest.getUser()!=null){
+            UserEntity userEntity=userRepository.findById(userId)
+                    .orElseThrow(()->new GlobalException("User "+ MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+             userEntity=modelMapper.map(doctorRequest.getUser(), UserEntity.class);
+            doctorEntity.setUser(userEntity);
+        }
+//        doctorEntity.setSpecialization(doctorRequest.getSpecialization());
+//        doctorEntity.setExperience(doctorRequest.getExperience());
+//        doctorEntity.setConsultation_fee(doctorRequest.getConsultation_fee());
+//        doctorEntity.setQualification(doctorRequest.getQualification());
 
+        doctorEntity=modelMapper.map(doctorRequest,DoctorEntity.class);
+        doctorRepository.save(doctorEntity);
+        return GlobalResponseBuilder.buildSuccessResponse("Doctor updated successfully");
+    }
 }

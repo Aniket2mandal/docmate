@@ -20,12 +20,12 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
-//    @ExceptionHandler(Exception.class)
-//    public ResponseEntity<GlobalResponse> handleException(Exception e) {
-//        GlobalResponse response = GlobalResponseBuilder.buildErrorResponse(
-//                new GlobalException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR)
-//        );
-//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                .body(response);
-//    }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<GlobalResponse> handleException(Exception e) {
+        GlobalResponse response = GlobalResponseBuilder.buildErrorResponse(
+                new GlobalException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR)
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(response);
+    }
 }
