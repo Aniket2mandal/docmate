@@ -17,21 +17,4 @@ import org.springframework.web.bind.annotation.*;
 public class DoctorController {
     private final DoctorService doctorService;
 
-    @PostMapping("/create")
-    public ResponseEntity<GlobalResponse> createDoctor(@RequestBody DoctorRequest doctor) {
-        return ResponseEntity.ok(doctorService.createDoctor(doctor));
-    }
-
-    @GetMapping("/get-all-doctor")
-    public ResponseEntity<GlobalResponse> getAllDoctor(){
-        return ResponseEntity.ok(doctorService.getAllDoctor());
-    }
-    @GetMapping("/get-doctor/{id}")
-public ResponseEntity<GlobalResponse> getDoctorById(@PathVariable String id){
-        return ResponseEntity.ok(doctorService.getDoctorById(id));
-    }
-@PutMapping("/change-status/{userId}")
-    public ResponseEntity<GlobalResponse> changeStatus(@RequestBody UserRequest user, @PathVariable String id){
-        return ResponseEntity.ok(doctorService.changeStatus(user, id));
-}
 }
