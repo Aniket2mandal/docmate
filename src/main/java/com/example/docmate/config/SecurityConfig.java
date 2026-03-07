@@ -37,6 +37,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/auth/user-profile","/auth/upload-user-image/**").authenticated()
+                        .requestMatchers("/doctor/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .sessionManagement(session -> session

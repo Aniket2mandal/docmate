@@ -4,6 +4,8 @@ import com.example.docmate.enums.WeekDay;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -11,5 +13,8 @@ import lombok.*;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DoctorScheduleRequest {
-    private WeekDay weekDay;
+    private WeekDay availableDay;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private String doctorId;
 }
