@@ -12,5 +12,5 @@ public interface DoctorService {
     GlobalResponse getAllDoctor();
     GlobalResponse getDoctorById(String id);
     GlobalResponse changeStatus(UserRequest user, String userId);
-    GlobalResponse updateDoctor (DoctorRequest doctorRequest, String doctorId , String userId);
+    GlobalResponse updateDoctor (DoctorRequest doctorRequest, String doctorId);
 }

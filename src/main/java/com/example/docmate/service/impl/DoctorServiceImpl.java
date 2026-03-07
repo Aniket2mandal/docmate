@@ -124,13 +124,16 @@ public class DoctorServiceImpl implements DoctorService {
         return  GlobalResponseBuilder.buildSuccessResponse("User status changed");
     }
     @Override
-    public  GlobalResponse updateDoctor (DoctorRequest doctorRequest, String doctorId, String userId ){
+    public  GlobalResponse updateDoctor (DoctorRequest doctorRequest, String doctorId ){
         DoctorEntity doctorEntity=doctorRepository.findById(doctorId)
                 .orElseThrow(()-> new GlobalException("Doctor "+ MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
         if(doctorRequest.getUser()!=null){
-            UserEntity userEntity=userRepository.findById(userId)
+            UserEntity userEntity=userRepository.findById(doctorEntity.getUserId())
                     .orElseThrow(()->new GlobalException("User "+ MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
-             userEntity=modelMapper.map(doctorRequest.getUser(), UserEntity.class);
+             modelMapper.map(doctorRequest.getUser(), userEntity);
+
+             userRepository.save(userEntity);
+
             doctorEntity.setUser(userEntity);
         }
 //        doctorEntity.setSpecialization(doctorRequest.getSpecialization());
@@ -138,7 +141,7 @@ public class DoctorServiceImpl implements DoctorService {
 //        doctorEntity.setConsultation_fee(doctorRequest.getConsultation_fee());
 //        doctorEntity.setQualification(doctorRequest.getQualification());
 
-        doctorEntity=modelMapper.map(doctorRequest,DoctorEntity.class);
+       modelMapper.map(doctorRequest,doctorEntity);
         doctorRepository.save(doctorEntity);
         return GlobalResponseBuilder.buildSuccessResponse("Doctor updated successfully");
     }
