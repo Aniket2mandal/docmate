@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/auth/user-profile","/auth/upload-user-image/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .sessionManagement(session -> session
