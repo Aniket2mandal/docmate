@@ -20,6 +20,7 @@ import com.example.docmate.repository.UserRepository;
 import com.example.docmate.service.DoctorService;
 import com.example.docmate.utils.MyConstants;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,7 +33,7 @@ import static org.springframework.util.ObjectUtils.isEmpty;
 
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class DoctorServiceImpl implements DoctorService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -115,24 +116,19 @@ public class DoctorServiceImpl implements DoctorService {
         }
         return GlobalResponseBuilder.buildSuccessResponseWithData("Doctor fetched successfully", doctorResponse);
     }
-    @Override
-    public GlobalResponse changeStatus(UserRequest user, String userId) {
-        UserEntity userEntity = userRepository.findById(userId)
-                .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
-        userEntity.setStatus(user.getStatus());
-        userRepository.save(userEntity);
-        return  GlobalResponseBuilder.buildSuccessResponse("User status changed");
-    }
-    @Override
-    public  GlobalResponse updateDoctor (DoctorRequest doctorRequest, String doctorId ){
-        DoctorEntity doctorEntity=doctorRepository.findById(doctorId)
-                .orElseThrow(()-> new GlobalException("Doctor "+ MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
-        if(doctorRequest.getUser()!=null){
-            UserEntity userEntity=userRepository.findById(doctorEntity.getUserId())
-                    .orElseThrow(()->new GlobalException("User "+ MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
-             modelMapper.map(doctorRequest.getUser(), userEntity);
 
-             userRepository.save(userEntity);
+
+
+    @Override
+    public GlobalResponse updateDoctor(DoctorRequest doctorRequest, String doctorId) {
+        DoctorEntity doctorEntity = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+        if (doctorRequest.getUser() != null) {
+            UserEntity userEntity = userRepository.findById(doctorEntity.getUserId())
+                    .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+            modelMapper.map(doctorRequest.getUser(), userEntity);
+
+            userRepository.save(userEntity);
 
             doctorEntity.setUser(userEntity);
         }
@@ -141,7 +137,7 @@ public class DoctorServiceImpl implements DoctorService {
 //        doctorEntity.setConsultation_fee(doctorRequest.getConsultation_fee());
 //        doctorEntity.setQualification(doctorRequest.getQualification());
 
-       modelMapper.map(doctorRequest,doctorEntity);
+        modelMapper.map(doctorRequest, doctorEntity);
         doctorRepository.save(doctorEntity);
         return GlobalResponseBuilder.buildSuccessResponse("Doctor updated successfully");
     }

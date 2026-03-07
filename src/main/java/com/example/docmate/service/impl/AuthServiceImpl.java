@@ -12,6 +12,7 @@ import com.example.docmate.global.response.GlobalResponseBuilder;
 import com.example.docmate.payload.request.LoginRequest;
 import com.example.docmate.payload.request.PatientRequest;
 import com.example.docmate.payload.request.UserRequest;
+import com.example.docmate.payload.response.DoctorResponse;
 import com.example.docmate.payload.response.LoginResponse;
 import com.example.docmate.payload.response.PatientResponse;
 import com.example.docmate.payload.response.UserResponse;
@@ -212,37 +213,44 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    public GlobalResponse getUserProfile(){
-        Authentication authentication= SecurityContextHolder.getContext().getAuthentication();
-        if(authentication== null || !authentication.isAuthenticated()){
-            throw new GlobalException(" User is not authenticated ",HttpStatus.UNAUTHORIZED);
+    public GlobalResponse getUserProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new GlobalException(" User is not authenticated ", HttpStatus.UNAUTHORIZED);
         }
         //getName() returns the "principal" (the main identifier), which YOU set as the email when creating the JWT token! so it returns email
-        String email=authentication.getName();
+        String email = authentication.getName();
+
+        Role role = authentication.getAuthorities().stream().findFirst().get().getAuthority().equals("ROLE_ADMIN") ? Role.ADMIN :
+                authentication.getAuthorities().stream().findFirst().get().getAuthority().equals("ROLE_DOCTOR") ? Role.DOCTOR : Role.PATIENT;
 
         UserEntity userEntity = userRepository.findByEmail(email)
-                .orElseThrow(() -> new GlobalException("User "+MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
-        PatientEntity patientEntity=patientRepository.findByUserId(userEntity.getId())
+                .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-                .orElseThrow(()-> new GlobalException("Patient "+MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
-
-        DoctorEntity doctorEntity=doctorRepository.findByUserId(userEntity.getId())
-                .orElseThrow(()-> new GlobalException("Doctor "+MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
-
-
-        UserResponse userResponse=null;
-
-        if(patientEntity != null){
-            userResponse = modelMapper.map(userEntity, UserResponse.class);
-            PatientResponse patientResponse= modelMapper.map(patientEntity, PatientResponse.class);
-            userResponse.setPatientCore(patientResponse);
-
+        UserResponse userResponse = modelMapper.map(userEntity, UserResponse.class);
+        if(userEntity.getRole() != null){
+            userResponse.setRole(role);
         }
 
-//        if(doctorEntity != null){
-//            userResponse = modelMapper.map(userEntity, UserResponse.class);
-//            userResponse.setDoctorCore(modelMapper.map(doctorEntity, UserResponse.DoctorCore.class));
-//        }
+        if (role.equals(Role.PATIENT)) {
+            PatientEntity patientEntity = patientRepository.findByUserId(userEntity.getId())
+                    .orElseThrow(() -> new GlobalException("Patient " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+            if (patientEntity != null) {
+                PatientResponse patientResponse = modelMapper.map(patientEntity, PatientResponse.class);
+                userResponse.setPatientCore(patientResponse);
+                userResponse.setRole(role);
+            }
+        }
+
+        if (role.equals(Role.DOCTOR)) {
+            DoctorEntity doctorEntity = doctorRepository.findByUserId(userEntity.getId())
+                    .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+            if (doctorEntity != null) {
+                userResponse.setDoctorCore(modelMapper.map(doctorEntity, DoctorResponse.class));
+                userResponse.setRole(role);
+            }
+        }
 
         return GlobalResponseBuilder.buildSuccessResponseWithData("User profile fetched successfully", userResponse);
     }
