@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DoctorScheduleEntity extends BaseEntity {
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "available_day")
     private WeekDay availableDay;
 
