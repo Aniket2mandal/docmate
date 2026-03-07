@@ -4,6 +4,7 @@ import com.example.docmate.entity.DoctorEntity;
 import com.example.docmate.enums.UserStatus;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.payload.request.DoctorRequest;
+import com.example.docmate.payload.request.DoctorScheduleRequest;
 import com.example.docmate.payload.request.UserRequest;
 import com.example.docmate.service.DoctorService;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class DoctorController {
     private final DoctorService doctorService;
-// @PostMapping("/create-schedule")
-//    public ResponseEntity<GlobalResponse> createSchedule(@RequestBody )
+ @PostMapping("/create-schedule")
+    public ResponseEntity<GlobalResponse> createDoctorSchedule(@RequestBody DoctorScheduleRequest scheduleRequest){
+     return ResponseEntity.ok(doctorService.createDoctorSchedule(scheduleRequest));
+ }
 }

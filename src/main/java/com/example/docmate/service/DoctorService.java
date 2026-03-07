@@ -1,10 +1,10 @@
 package com.example.docmate.service;
 
-import com.example.docmate.enums.UserStatus;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.payload.request.DoctorRequest;
-import com.example.docmate.payload.request.UserRequest;
+import com.example.docmate.payload.request.DoctorScheduleRequest;
 import org.springframework.data.domain.Pageable;
+
 
 
 public interface DoctorService {
@@ -15,4 +15,6 @@ public interface DoctorService {
     GlobalResponse getDoctorById(String id);
 
     GlobalResponse updateDoctor(DoctorRequest doctorRequest, String doctorId);
+
+    GlobalResponse createDoctorSchedule(DoctorScheduleRequest scheduleRequest);
 }

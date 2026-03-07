@@ -2,6 +2,7 @@ package com.example.docmate.service.impl;
 
 
 import com.example.docmate.entity.DoctorEntity;
+import com.example.docmate.entity.DoctorScheduleEntity;
 import com.example.docmate.entity.RoleEntity;
 import com.example.docmate.entity.UserEntity;
 import com.example.docmate.enums.Role;
@@ -10,11 +11,13 @@ import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
 import com.example.docmate.payload.request.DoctorRequest;
+import com.example.docmate.payload.request.DoctorScheduleRequest;
 import com.example.docmate.payload.request.UserRequest;
 import com.example.docmate.payload.response.DoctorResponse;
 import com.example.docmate.payload.response.RoleResponse;
 import com.example.docmate.payload.response.UserResponse;
 import com.example.docmate.repository.DoctorRepository;
+import com.example.docmate.repository.DoctorScheduleRepository;
 import com.example.docmate.repository.RoleRepository;
 import com.example.docmate.repository.UserRepository;
 import com.example.docmate.service.DoctorService;
@@ -43,6 +46,7 @@ public class DoctorServiceImpl implements DoctorService {
     private final PasswordEncoder passwordEncoder;
     private final DoctorRepository doctorRepository;
     private final ModelMapper modelMapper;
+    private final DoctorScheduleRepository doctorScheduleRepository;
 
     @Override
     public GlobalResponse createDoctor(DoctorRequest doctor) {
@@ -146,4 +150,14 @@ public class DoctorServiceImpl implements DoctorService {
         doctorRepository.save(doctorEntity);
         return GlobalResponseBuilder.buildSuccessResponse("Doctor updated successfully");
     }
+    @Override
+   public GlobalResponse createDoctorSchedule(DoctorScheduleRequest scheduleRequest){
+        DoctorScheduleEntity doctorScheduleEntity=modelMapper.map(scheduleRequest,DoctorScheduleEntity.class);
+        DoctorEntity doctorEntity=doctorRepository.findById(scheduleRequest.getDoctorId())
+                .orElseThrow(()-> new GlobalException("Doctor "+MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+        doctorScheduleEntity.setDoctor(doctorEntity);
+        doctorScheduleRepository.save(doctorScheduleEntity);
+        return GlobalResponseBuilder.buildSuccessResponse("Doctor Schedule created");
+    }
+
 }

@@ -16,4 +16,5 @@ public class DoctorResponse {
     private double experience;
     private String qualification;
     private String consultation_fee;
+    private DoctorScheduleResponse schedule;
 }
