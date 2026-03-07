@@ -30,7 +30,7 @@ public class AdminController {
     public ResponseEntity<GlobalResponse> getAllRole(){
             return ResponseEntity.ok(adminService.getAllRole());
     }
-    @PostMapping("/create")
+    @PostMapping("/create-doctor")
     public ResponseEntity<GlobalResponse> createDoctor(@RequestBody DoctorRequest doctor) {
         return ResponseEntity.ok(doctorService.createDoctor(doctor));
     }
@@ -47,8 +47,8 @@ public class AdminController {
     public ResponseEntity<GlobalResponse> changeStatus(@RequestBody UserRequest user, @PathVariable String userId){
         return ResponseEntity.ok(doctorService.changeStatus(user, userId));
     }
-    @PutMapping("/update-doctor/{doctorId}/{userId}")
-    public  ResponseEntity<GlobalResponse> updateDoctor (@RequestBody DoctorRequest doctorRequest, @PathVariable String doctorId ,@PathVariable String userId){
-        return ResponseEntity.ok(doctorService.updateDoctor( doctorRequest,doctorId, userId));
+    @PutMapping("/update-doctor/{doctorId}")
+    public  ResponseEntity<GlobalResponse> updateDoctor (@RequestBody DoctorRequest doctorRequest, @PathVariable String doctorId ){
+        return ResponseEntity.ok(doctorService.updateDoctor( doctorRequest,doctorId));
     }
 }
