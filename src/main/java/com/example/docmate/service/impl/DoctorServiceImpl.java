@@ -118,7 +118,6 @@ public class DoctorServiceImpl implements DoctorService {
     }
 
 
-
     @Override
     public GlobalResponse updateDoctor(DoctorRequest doctorRequest, String doctorId) {
         DoctorEntity doctorEntity = doctorRepository.findById(doctorId)
