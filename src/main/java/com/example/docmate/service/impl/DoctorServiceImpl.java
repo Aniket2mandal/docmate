@@ -22,6 +22,9 @@ import com.example.docmate.utils.MyConstants;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -80,9 +83,12 @@ public class DoctorServiceImpl implements DoctorService {
     }
 
     @Override
-    public GlobalResponse getAllDoctor() {
-        List<DoctorEntity> doctorEntityList = doctorRepository.findAll();
-        List<DoctorResponse> doctorResponseList = doctorEntityList.stream()
+    public GlobalResponse getAllDoctor(Pageable pageable) {
+//        Pageable pageable = PageRequest.of(page, size);
+
+        Page<DoctorEntity> doctorEntityList = doctorRepository.findAll(pageable);
+
+        List<DoctorResponse> doctorResponseList = doctorEntityList.getContent().stream()
                 .map(doctor -> {
                     DoctorResponse doctorResponse = modelMapper.map(doctor, DoctorResponse.class);
                     if (doctor.getUser() != null) {
