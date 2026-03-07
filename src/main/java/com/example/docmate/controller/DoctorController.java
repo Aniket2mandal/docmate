@@ -16,5 +16,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class DoctorController {
     private final DoctorService doctorService;
-
+ @PostMapping("/create-schedule")
+    public ResponseEntity<GlobalResponse> createSchedule(@RequestBody )
 }
