@@ -25,8 +25,9 @@ public class DoctorScheduleEntity extends BaseEntity {
     @Column(name = "end_time")
     private LocalDateTime endTime;
 
-    @Column(name = "is_available")
-    private Boolean isAvailable = true;
+    @Column(name = "available")
+    @Builder.Default
+    private Boolean available = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_id", referencedColumnName = "id")

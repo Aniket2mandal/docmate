@@ -4,6 +4,8 @@ import com.example.docmate.payload.request.UserRequest;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor

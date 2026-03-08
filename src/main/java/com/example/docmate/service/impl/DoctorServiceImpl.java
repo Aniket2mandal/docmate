@@ -150,12 +150,24 @@ public class DoctorServiceImpl implements DoctorService {
         doctorRepository.save(doctorEntity);
         return GlobalResponseBuilder.buildSuccessResponse("Doctor updated successfully");
     }
+
     @Override
-   public GlobalResponse createDoctorSchedule(DoctorScheduleRequest scheduleRequest){
-        DoctorScheduleEntity doctorScheduleEntity=modelMapper.map(scheduleRequest,DoctorScheduleEntity.class);
-        DoctorEntity doctorEntity=doctorRepository.findById(scheduleRequest.getDoctorId())
-                .orElseThrow(()-> new GlobalException("Doctor "+MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
-        doctorScheduleEntity.setDoctor(doctorEntity);
+    public GlobalResponse createDoctorSchedule(DoctorScheduleRequest scheduleRequest) {
+
+        //if request is using id and your entity has both id and join column than modelMapper will not work and you have to use builder
+
+//        DoctorScheduleEntity doctorScheduleEntity=modelMapper.map(scheduleRequest,DoctorScheduleEntity.class);
+
+        DoctorEntity doctorEntity = doctorRepository.findById(scheduleRequest.getDoctorId())
+                .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        DoctorScheduleEntity doctorScheduleEntity = DoctorScheduleEntity.builder()
+                .availableDay(scheduleRequest.getAvailableDay())
+                .startTime(scheduleRequest.getStartTime())
+                .endTime(scheduleRequest.getEndTime())
+                .doctor(doctorEntity)
+                .build();
+
         doctorScheduleRepository.save(doctorScheduleEntity);
         return GlobalResponseBuilder.buildSuccessResponse("Doctor Schedule created");
     }
