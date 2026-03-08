@@ -10,4 +10,5 @@ import java.util.List;
 
 public interface DoctorScheduleRepository extends JpaRepository<DoctorScheduleEntity, String> {
     List<DoctorScheduleEntity> findByDoctorIdAndAvailableDayAndAvailableTrue(String doctorId, WeekDay weekDay);
+   List<DoctorScheduleEntity> findByDoctorId(String doctorId);
 }

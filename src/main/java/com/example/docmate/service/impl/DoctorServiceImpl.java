@@ -6,14 +6,13 @@ import com.example.docmate.entity.DoctorScheduleEntity;
 import com.example.docmate.entity.RoleEntity;
 import com.example.docmate.entity.UserEntity;
 import com.example.docmate.enums.Role;
-import com.example.docmate.enums.UserStatus;
 import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
 import com.example.docmate.payload.request.DoctorRequest;
 import com.example.docmate.payload.request.DoctorScheduleRequest;
-import com.example.docmate.payload.request.UserRequest;
 import com.example.docmate.payload.response.DoctorResponse;
+import com.example.docmate.payload.response.DoctorScheduleResponse;
 import com.example.docmate.payload.response.RoleResponse;
 import com.example.docmate.payload.response.UserResponse;
 import com.example.docmate.repository.DoctorRepository;
@@ -22,11 +21,9 @@ import com.example.docmate.repository.RoleRepository;
 import com.example.docmate.repository.UserRepository;
 import com.example.docmate.service.DoctorService;
 import com.example.docmate.utils.MyConstants;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -154,7 +151,8 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     public GlobalResponse createDoctorSchedule(DoctorScheduleRequest scheduleRequest) {
 
-        //if request is using id and your entity has both id and join column than modelMapper will not work and you have to use builder
+        //if request is using id and your entity has both id and join column than modelMapper will
+        // not work and you have to use builder
 
 //        DoctorScheduleEntity doctorScheduleEntity=modelMapper.map(scheduleRequest,DoctorScheduleEntity.class);
 
@@ -170,6 +168,15 @@ public class DoctorServiceImpl implements DoctorService {
 
         doctorScheduleRepository.save(doctorScheduleEntity);
         return GlobalResponseBuilder.buildSuccessResponse("Doctor Schedule created");
+    }
+
+    @Override
+    public GlobalResponse getAllSchedule(String doctorId) {
+        List<DoctorScheduleEntity> doctorScheduleEntityList = doctorScheduleRepository.findByDoctorId(doctorId);
+        List<DoctorScheduleResponse> doctorScheduleResponseList= doctorScheduleEntityList.stream()
+                .map(schedule-> modelMapper.map(schedule,DoctorScheduleResponse.class))
+                .toList();
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Doctor schedule fetched succesfully",doctorScheduleResponseList);
     }
 
 }

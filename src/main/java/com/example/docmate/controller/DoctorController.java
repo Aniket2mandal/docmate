@@ -21,4 +21,8 @@ public class DoctorController {
     public ResponseEntity<GlobalResponse> createDoctorSchedule(@RequestBody DoctorScheduleRequest scheduleRequest){
      return ResponseEntity.ok(doctorService.createDoctorSchedule(scheduleRequest));
  }
+ @GetMapping("/get-all-schedule/{doctorId}")
+    public ResponseEntity<GlobalResponse> getAllSchedule(@PathVariable String doctorId){
+     return ResponseEntity.ok(doctorService.getAllSchedule(doctorId));
+ }
 }
