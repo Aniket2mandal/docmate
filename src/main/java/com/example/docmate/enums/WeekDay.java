@@ -4,5 +4,5 @@ import lombok.Getter;
 
 @Getter
 public enum WeekDay {
-    SUN,MON,TUE,WED,THU,FRI,SAT;
+    SUNDAY,MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY;
 }

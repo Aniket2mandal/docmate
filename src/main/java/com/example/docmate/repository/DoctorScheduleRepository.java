@@ -9,5 +9,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface DoctorScheduleRepository extends JpaRepository<DoctorScheduleEntity, String> {
-    List<DoctorScheduleEntity> findByDoctorIdAndAvailableDayAndIsAvailableTrue(String doctorId, WeekDay weekDay);
+    List<DoctorScheduleEntity> findByDoctorIdAndAvailableDayAndAvailableTrue(String doctorId, WeekDay weekDay);
 }

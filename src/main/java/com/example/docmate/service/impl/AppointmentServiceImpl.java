@@ -48,7 +48,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         WeekDay day = WeekDay.valueOf(appointmentTime.getDayOfWeek().name());
 
         List<DoctorScheduleEntity> schedules =
-                doctorScheduleRepository.findByDoctorIdAndAvailableDayAndIsAvailableTrue(
+                doctorScheduleRepository.findByDoctorIdAndAvailableDayAndAvailableTrue(
                         doctorEntity.getId(),
                         day
                 );
@@ -67,11 +67,17 @@ public class AppointmentServiceImpl implements AppointmentService {
                 appointmentRequest.getDoctorId(),
                 appointmentTime,
                 AppointmentStatus.BOOKED
-        )){
+        )) {
             throw new GlobalException("You already have an appointment at this time", HttpStatus.BAD_REQUEST);
         }
 
-        AppointmentEntity appointmentEntity = modelMapper.map(appointmentRequest, AppointmentEntity.class);
+        AppointmentEntity appointmentEntity = AppointmentEntity.builder()
+                .appointmentDateTime(appointmentTime)
+                .status(AppointmentStatus.BOOKED)
+                .doctor(doctorEntity)
+                .patient(patientEntity)
+                .build();
+
         appointmentRepository.save(appointmentEntity);
 
         return GlobalResponseBuilder.buildSuccessResponse("Appointment booked successfully");
