@@ -154,7 +154,8 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     public GlobalResponse createDoctorSchedule(DoctorScheduleRequest scheduleRequest) {
 
-        //if request is using id and your entity has both id and join column than modelMapper will not work and you have to use builder
+        //if request is using id and your entity has both id and join column than modelMapper will
+        // not work and you have to use builder
 
 //        DoctorScheduleEntity doctorScheduleEntity=modelMapper.map(scheduleRequest,DoctorScheduleEntity.class);
 

@@ -59,7 +59,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                                 appointmentTime.isBefore(schedule.getEndTime())
                 );
         if (!isAvailable) {
-            throw new GlobalException(MyConstants.ERR_MSG_NOT_AVAILABLE, HttpStatus.BAD_REQUEST);
+            throw new GlobalException("Appointment "+MyConstants.ERR_MSG_NOT_AVAILABLE, HttpStatus.BAD_REQUEST);
         }
 
         if (appointmentRepository.existsByPatientIdAndDoctorIdAndAppointmentDateTimeAndStatus(
@@ -74,6 +74,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         AppointmentEntity appointmentEntity = AppointmentEntity.builder()
                 .appointmentDateTime(appointmentTime)
                 .status(AppointmentStatus.BOOKED)
+                .reasonForVisit(appointmentRequest.getReasonForVisit())
                 .doctor(doctorEntity)
                 .patient(patientEntity)
                 .build();
