@@ -23,6 +23,8 @@ public class UserResponse {
     private String phone;
     private String address;
     private Role role;
+
+//    FOR DOCTOR AND PATIENT PROFILE
     private PatientResponse patientCore;
     private DoctorResponse doctorCore;
     private String imageUrl;
