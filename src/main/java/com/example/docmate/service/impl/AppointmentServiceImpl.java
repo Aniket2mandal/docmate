@@ -62,7 +62,7 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new GlobalException(MyConstants.ERR_MSG_NOT_AVAILABLE, HttpStatus.BAD_REQUEST);
         }
 
-        if (appointmentRepository.existAppointmentByPatientIdAndDoctorIdAndAppointmentDateTimeAndStatus(
+        if (appointmentRepository.existsByPatientIdAndDoctorIdAndAppointmentDateTimeAndStatus(
                 appointmentRequest.getPatientId(),
                 appointmentRequest.getDoctorId(),
                 appointmentTime,

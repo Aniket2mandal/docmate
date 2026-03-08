@@ -7,6 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDateTime;
 
 public interface AppointmentRepository extends JpaRepository<AppointmentEntity, String> {
-    boolean existAppointmentByPatientIdAndDoctorIdAndAppointmentDateTimeAndStatus(
+    boolean existsByPatientIdAndDoctorIdAndAppointmentDateTimeAndStatus(
             String patientId, String doctorId, LocalDateTime appointmentDateTime, AppointmentStatus status);
 }

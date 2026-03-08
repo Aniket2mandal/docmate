@@ -31,7 +31,7 @@ public class AppointmentEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name="appointment_status")
-    private AppointmentStatus appointmentStatus;
+    private AppointmentStatus status;
 
     @Column(name="reason_for_visit")
     private String reasonForVisit;
