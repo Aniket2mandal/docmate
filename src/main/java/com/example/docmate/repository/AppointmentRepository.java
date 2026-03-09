@@ -5,8 +5,10 @@ import com.example.docmate.enums.AppointmentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface AppointmentRepository extends JpaRepository<AppointmentEntity, String> {
     boolean existsByPatientIdAndDoctorIdAndAppointmentDateTimeAndStatus(
             String patientId, String doctorId, LocalDateTime appointmentDateTime, AppointmentStatus status);
+    List<AppointmentEntity> findByPatientId(String patientId);
 }

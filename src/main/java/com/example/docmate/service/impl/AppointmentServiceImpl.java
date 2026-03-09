@@ -10,6 +10,7 @@ import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
 import com.example.docmate.payload.request.AppointmentRequest;
+import com.example.docmate.payload.response.*;
 import com.example.docmate.repository.AppointmentRepository;
 import com.example.docmate.repository.DoctorRepository;
 import com.example.docmate.repository.DoctorScheduleRepository;
@@ -59,7 +60,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                                 appointmentTime.isBefore(schedule.getEndTime())
                 );
         if (!isAvailable) {
-            throw new GlobalException("Appointment "+MyConstants.ERR_MSG_NOT_AVAILABLE, HttpStatus.BAD_REQUEST);
+            throw new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_AVAILABLE, HttpStatus.BAD_REQUEST);
         }
 
         if (appointmentRepository.existsByPatientIdAndDoctorIdAndAppointmentDateTimeAndStatus(
@@ -83,4 +84,43 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         return GlobalResponseBuilder.buildSuccessResponse("Appointment booked successfully");
     }
+
+    @Override
+    public GlobalResponse getAllAppointment(String patientId) {
+        List<AppointmentEntity> appointmentEntityList = appointmentRepository.findByPatientId(patientId);
+        List<AppointmentResponse> appointmentResponseList = appointmentEntityList.stream()
+                .map(appointment -> {
+                            DoctorResponse doctorResponse = modelMapper.map(appointment.getDoctor(), DoctorResponse.class);
+                            if (appointment.getDoctor().getUser() != null) {
+                                UserResponse userResponse = modelMapper.map(appointment.getDoctor().getUser(), UserResponse.class);
+                                if (appointment.getDoctor().getUser().getRole() != null) {
+                                    RoleResponse roleResponse = modelMapper.map(appointment.getDoctor().getUser().getRole(), RoleResponse.class);
+                                    userResponse.setRole(roleResponse.getName());
+                                }
+                                doctorResponse.setUser(userResponse);
+                            }
+//                            PatientResponse patientResponse = modelMapper.map(appointment.getPatient(), PatientResponse.class);
+//                            if (appointment.getPatient().getUser() != null) {
+//                                UserResponse userResponse = modelMapper.map(appointment.getPatient().getUser(), UserResponse.class);
+//                                if (appointment.getDoctor().getUser().getRole() != null) {
+//                                    RoleResponse roleResponse = modelMapper.map(appointment.getPatient().getUser().getRole(), RoleResponse.class);
+//                                    userResponse.setRole(roleResponse.getName());
+//                                }
+//                                patientResponse.setUser(userResponse);
+//                            }
+                            AppointmentResponse appointmentResponse = AppointmentResponse.builder()
+                                    .appointmentId(appointment.getId())
+                                    .patientId(appointment.getPatientId())
+                                    .doctor(doctorResponse)
+                                    .appointmentDateTime(appointment.getAppointmentDateTime())
+                                    .status(appointment.getStatus())
+                                    .reasonForVisit(appointment.getReasonForVisit())
+                                    .build();
+                            return appointmentResponse;
+                        }
+                )
+                .toList();
+        return GlobalResponseBuilder.buildSuccessResponseWithData("All appointment fetched successfully ",appointmentResponseList);
+    }
+
 }

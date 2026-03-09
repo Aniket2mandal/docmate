@@ -5,10 +5,7 @@ import com.example.docmate.payload.request.AppointmentRequest;
 import com.example.docmate.service.AppointmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/appointment")
@@ -20,5 +17,9 @@ public class AppointmentController {
     @PostMapping("/book")
     public ResponseEntity<GlobalResponse> bookAppointment(@RequestBody AppointmentRequest appointmentRequest) {
         return ResponseEntity.ok(appointmentService.bookAppointment(appointmentRequest));
+    }
+    @GetMapping("/get-all-appointment/{patientId}")
+    public ResponseEntity<GlobalResponse> getAllAppointment(@PathVariable String patientId){
+        return  ResponseEntity.ok(appointmentService.getAllAppointment(patientId));
     }
 }
