@@ -174,7 +174,14 @@ public class DoctorServiceImpl implements DoctorService {
     public GlobalResponse getAllSchedule(String doctorId) {
         List<DoctorScheduleEntity> doctorScheduleEntityList = doctorScheduleRepository.findByDoctorId(doctorId);
         List<DoctorScheduleResponse> doctorScheduleResponseList= doctorScheduleEntityList.stream()
-                .map(schedule-> modelMapper.map(schedule,DoctorScheduleResponse.class))
+                .map(schedule->
+//                        modelMapper.map(schedule,DoctorScheduleResponse.class))
+                        DoctorScheduleResponse.builder()
+                                .id(schedule.getId())
+                                .availableDay(schedule.getAvailableDay())
+                                .startTime(schedule.getStartTime())
+                                .endTime(schedule.getEndTime())
+                                .build())
                 .toList();
         return GlobalResponseBuilder.buildSuccessResponseWithData("Doctor schedule fetched succesfully",doctorScheduleResponseList);
     }
