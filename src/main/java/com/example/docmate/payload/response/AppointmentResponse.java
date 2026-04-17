@@ -20,8 +20,8 @@ import java.time.LocalDateTime;
 public class AppointmentResponse {
     private String appointmentId;
     private DoctorResponse doctor;
-//    private PatientResponse patient;
-    private String patientId;
+    private PatientResponse patient;
+//    private String patientId;
     private LocalDateTime appointmentDateTime;
     private AppointmentStatus status;
     private String reasonForVisit;
