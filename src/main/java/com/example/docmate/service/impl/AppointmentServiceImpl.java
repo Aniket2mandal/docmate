@@ -4,6 +4,7 @@ import com.example.docmate.entity.AppointmentEntity;
 import com.example.docmate.entity.DoctorEntity;
 import com.example.docmate.entity.DoctorScheduleEntity;
 import com.example.docmate.entity.PatientEntity;
+import com.example.docmate.entity.UserEntity;
 import com.example.docmate.enums.AppointmentStatus;
 import com.example.docmate.enums.WeekDay;
 import com.example.docmate.global.exception.GlobalException;
@@ -15,7 +16,9 @@ import com.example.docmate.repository.AppointmentRepository;
 import com.example.docmate.repository.DoctorRepository;
 import com.example.docmate.repository.DoctorScheduleRepository;
 import com.example.docmate.repository.PatientRepository;
+import com.example.docmate.repository.UserRepository;
 import com.example.docmate.service.AppointmentService;
+import com.example.docmate.utils.CommonMethods;
 import com.example.docmate.utils.MyConstants;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -34,6 +37,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final PatientRepository patientRepository;
     private final AppointmentRepository appointmentRepository;
     private final ModelMapper modelMapper;
+    private final CommonMethods commonMethods;
+    private final UserRepository userRepository;
 
     @Override
     public GlobalResponse bookAppointment(AppointmentRequest appointmentRequest) {
@@ -88,39 +93,119 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public GlobalResponse getAllAppointment(String patientId) {
         List<AppointmentEntity> appointmentEntityList = appointmentRepository.findByPatientId(patientId);
-        List<AppointmentResponse> appointmentResponseList = appointmentEntityList.stream()
-                .map(appointment -> {
-                            DoctorResponse doctorResponse = modelMapper.map(appointment.getDoctor(), DoctorResponse.class);
-                            if (appointment.getDoctor().getUser() != null) {
-                                UserResponse userResponse = modelMapper.map(appointment.getDoctor().getUser(), UserResponse.class);
-                                if (appointment.getDoctor().getUser().getRole() != null) {
-                                    RoleResponse roleResponse = modelMapper.map(appointment.getDoctor().getUser().getRole(), RoleResponse.class);
-                                    userResponse.setRole(roleResponse.getName());
-                                }
-                                doctorResponse.setUser(userResponse);
-                            }
-//                            PatientResponse patientResponse = modelMapper.map(appointment.getPatient(), PatientResponse.class);
-//                            if (appointment.getPatient().getUser() != null) {
-//                                UserResponse userResponse = modelMapper.map(appointment.getPatient().getUser(), UserResponse.class);
-//                                if (appointment.getDoctor().getUser().getRole() != null) {
-//                                    RoleResponse roleResponse = modelMapper.map(appointment.getPatient().getUser().getRole(), RoleResponse.class);
-//                                    userResponse.setRole(roleResponse.getName());
-//                                }
-//                                patientResponse.setUser(userResponse);
-//                            }
-                            AppointmentResponse appointmentResponse = AppointmentResponse.builder()
-                                    .appointmentId(appointment.getId())
-                                    .patientId(appointment.getPatientId())
-                                    .doctor(doctorResponse)
-                                    .appointmentDateTime(appointment.getAppointmentDateTime())
-                                    .status(appointment.getStatus())
-                                    .reasonForVisit(appointment.getReasonForVisit())
-                                    .build();
-                            return appointmentResponse;
-                        }
-                )
-                .toList();
+
+        List<AppointmentResponse> appointmentResponseList = mapAppointments(appointmentEntityList);
+
         return GlobalResponseBuilder.buildSuccessResponseWithData("All appointment fetched successfully ",appointmentResponseList);
     }
+
+    @Override
+    public GlobalResponse getPatientsUpcomingAppointment(String patientId) {
+
+        PatientEntity patientEntity=patientRepository.findById(patientId)
+                .orElseThrow(() -> new GlobalException("Patient " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        List<AppointmentEntity> appointmentEntityList =
+                appointmentRepository.findByPatientIdAndAppointmentDateTimeAfterAndStatus(
+                        patientId, now,AppointmentStatus.BOOKED);
+
+        List<AppointmentResponse> appointmentResponseList= mapAppointments(appointmentEntityList);
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Upcoming appointment fetched successfully ",appointmentResponseList);
+     }
+
+    @Override
+    public GlobalResponse getDoctorsUpcomingAppointment(String doctorId) {
+
+        DoctorEntity doctorEntity=doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        List<AppointmentEntity> appointmentEntityList =
+                appointmentRepository.findByDoctorIdAndAppointmentDateTimeAfterAndStatus(
+                        doctorId, LocalDateTime.now(),AppointmentStatus.BOOKED);
+
+        List<AppointmentResponse> appointmentResponseList= mapAppointments(appointmentEntityList);
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Upcoming appointment fetched successfully ",appointmentResponseList);
+    }
+
+    @Override
+    public GlobalResponse getPatientsPreviousAppointment(String patientId) {
+
+        PatientEntity patientEntity=patientRepository.findById(patientId)
+                .orElseThrow(() -> new GlobalException("Patient " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        List<AppointmentEntity> appointmentEntityList =
+                appointmentRepository.findByPatientIdAndAppointmentDateTimeBeforeAndStatus(
+                        patientId, now,AppointmentStatus.BOOKED);
+
+        List<AppointmentResponse> appointmentResponseList= mapAppointments(appointmentEntityList);
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Upcoming appointment fetched successfully ",appointmentResponseList);
+    }
+
+
+    @Override
+    public GlobalResponse getDoctorsPreviousAppointment(String doctorId) {
+
+        DoctorEntity doctorEntity=doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        List<AppointmentEntity> appointmentEntityList =
+                appointmentRepository.findByDoctorIdAndAppointmentDateTimeBeforeAndStatus(
+                        doctorId, LocalDateTime.now(),AppointmentStatus.COMPLETED);
+
+        List<AppointmentResponse> appointmentResponseList= mapAppointments(appointmentEntityList);
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Upcoming appointment fetched successfully ",appointmentResponseList);
+    }
+
+
+
+
+     public  List<AppointmentResponse> mapAppointments(List<AppointmentEntity> appointmentEntityList) {
+
+         List<AppointmentResponse> appointmentResponseList = appointmentEntityList.stream()
+                 .map(appointment -> {
+                             DoctorResponse doctorResponse = modelMapper.map(appointment.getDoctor(), DoctorResponse.class);
+                             if (appointment.getDoctor().getUser() != null) {
+                                 UserResponse userResponse = modelMapper.map(appointment.getDoctor().getUser(), UserResponse.class);
+                                 if (appointment.getDoctor().getUser().getRole() != null) {
+                                     RoleResponse roleResponse = modelMapper.map(appointment.getDoctor().getUser().getRole(), RoleResponse.class);
+                                     userResponse.setRole(roleResponse.getName());
+                                 }
+                                 doctorResponse.setUser(userResponse);
+                             }
+
+                             PatientResponse patientResponse = modelMapper.map(appointment.getPatient(), PatientResponse.class);
+                            if (appointment.getPatient().getUser() != null) {
+                                UserResponse userResponse = modelMapper.map(appointment.getPatient().getUser(), UserResponse.class);
+                                if (appointment.getDoctor().getUser().getRole() != null) {
+                                    RoleResponse roleResponse = modelMapper.map(appointment.getPatient().getUser().getRole(), RoleResponse.class);
+                                    userResponse.setRole(roleResponse.getName());
+                                }
+                                patientResponse.setUser(userResponse);
+                            }
+
+                             AppointmentResponse appointmentResponse = AppointmentResponse.builder()
+                                     .appointmentId(appointment.getId())
+//                                     .patientId(appointment.getPatientId())
+                                     .doctor(doctorResponse)
+                                     .patient(patientResponse)
+                                     .appointmentDateTime(appointment.getAppointmentDateTime())
+                                     .status(appointment.getStatus())
+                                     .reasonForVisit(appointment.getReasonForVisit())
+                                     .build();
+                             return appointmentResponse;
+                         }
+                 )
+                 .toList();
+
+         return appointmentResponseList;
+     }
 
 }

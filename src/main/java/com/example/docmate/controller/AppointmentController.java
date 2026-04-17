@@ -18,8 +18,29 @@ public class AppointmentController {
     public ResponseEntity<GlobalResponse> bookAppointment(@RequestBody AppointmentRequest appointmentRequest) {
         return ResponseEntity.ok(appointmentService.bookAppointment(appointmentRequest));
     }
+
     @GetMapping("/get-all-appointment/{patientId}")
     public ResponseEntity<GlobalResponse> getAllAppointment(@PathVariable String patientId){
         return  ResponseEntity.ok(appointmentService.getAllAppointment(patientId));
+    }
+
+    @GetMapping("/get-patient-upcoming-appointment/{patientId}")
+    public ResponseEntity<GlobalResponse> getPatientsUpcomingAppointment(@PathVariable String patientId) {
+        return ResponseEntity.ok(appointmentService.getPatientsUpcomingAppointment(patientId));
+    }
+
+    @GetMapping("/get-doctor-upcoming-appointment/{doctorId}")
+    public ResponseEntity<GlobalResponse> getDoctorsUpcomingAppointment(@PathVariable String doctorId) {
+        return ResponseEntity.ok(appointmentService.getDoctorsUpcomingAppointment(doctorId));
+    }
+
+    @GetMapping("/get-patient-previous-appointment/{patientId}")
+    public ResponseEntity<GlobalResponse> getPatientsPreviousAppointment(@PathVariable String patientId) {
+        return ResponseEntity.ok(appointmentService.getPatientsPreviousAppointment(patientId));
+    }
+
+    @GetMapping("/get-doctor-previous-appointment/{doctorId}")
+    public ResponseEntity<GlobalResponse> getDoctorsPreviousAppointment(@PathVariable String doctorId) {
+        return ResponseEntity.ok(appointmentService.getDoctorsPreviousAppointment(doctorId));
     }
 }
