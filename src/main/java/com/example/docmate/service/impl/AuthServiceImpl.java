@@ -176,10 +176,29 @@ public class AuthServiceImpl implements AuthService {
 
             refreshTokenService.createRefreshToken(userEntity.getEmail(), refreshToken);
 
+            String patientId = null;
+            String doctorId = null;
+
+            Role role = userEntity.getRole().getName();
+
+            if (role == Role.PATIENT) {
+                patientId = patientRepository.findByUserId(userEntity.getId())
+                        .map(PatientEntity::getId)
+                        .orElse(null);
+            }
+
+            if (role == Role.DOCTOR) {
+                doctorId = doctorRepository.findByUserId(userEntity.getId())
+                        .map(DoctorEntity::getId)
+                        .orElse(null);
+            }
+
             LoginResponse loginResponse = LoginResponse.builder()
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
                     .userId(userEntity.getId())
+                    .patientId(patientId)
+                    .doctorId(doctorId)
                     .email(userEntity.getEmail())
                     .role(userEntity.getRole().getName())
                     .build();

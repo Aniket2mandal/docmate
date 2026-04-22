@@ -141,7 +141,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         List<AppointmentEntity> appointmentEntityList =
                 appointmentRepository.findByPatientIdAndAppointmentDateTimeBeforeAndStatus(
-                        patientId, now,AppointmentStatus.BOOKED);
+                        patientId, now,AppointmentStatus.COMPLETED);
 
         List<AppointmentResponse> appointmentResponseList= mapAppointments(appointmentEntityList);
 
