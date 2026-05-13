@@ -17,4 +17,6 @@ public interface DoctorService {
 
     GlobalResponse createDoctorSchedule(DoctorScheduleRequest scheduleRequest);
     GlobalResponse getAllSchedule(String doctorId);
+
+    GlobalResponse getAvailableSlots(String doctorId);
 }

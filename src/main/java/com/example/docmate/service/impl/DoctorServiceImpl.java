@@ -92,6 +92,7 @@ public class DoctorServiceImpl implements DoctorService {
         List<DoctorResponse> doctorResponseList = doctorEntityList.getContent().stream()
                 .map(doctor -> {
                     DoctorResponse doctorResponse = modelMapper.map(doctor, DoctorResponse.class);
+                    doctorResponse.setDoctorId(doctor.getId());
                     if (doctor.getUser() != null) {
                         UserResponse userResponse = modelMapper.map(doctor.getUser(), UserResponse.class);
                         if (doctor.getUser().getRole() != null) {
@@ -113,6 +114,7 @@ public class DoctorServiceImpl implements DoctorService {
         DoctorEntity doctorEntity = doctorRepository.findById(id)
                 .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
         DoctorResponse doctorResponse = modelMapper.map(doctorEntity, DoctorResponse.class);
+        doctorResponse.setDoctorId(doctorEntity.getId());
         if (doctorEntity.getUser() != null) {
             UserResponse userResponse = modelMapper.map(doctorEntity.getUser(), UserResponse.class);
             if (doctorEntity.getUser().getRole() != null) {
@@ -173,8 +175,8 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     public GlobalResponse getAllSchedule(String doctorId) {
         List<DoctorScheduleEntity> doctorScheduleEntityList = doctorScheduleRepository.findByDoctorId(doctorId);
-        List<DoctorScheduleResponse> doctorScheduleResponseList= doctorScheduleEntityList.stream()
-                .map(schedule->
+        List<DoctorScheduleResponse> doctorScheduleResponseList = doctorScheduleEntityList.stream()
+                .map(schedule ->
 //                        modelMapper.map(schedule,DoctorScheduleResponse.class))
                         DoctorScheduleResponse.builder()
                                 .id(schedule.getId())
@@ -183,7 +185,19 @@ public class DoctorServiceImpl implements DoctorService {
                                 .endTime(schedule.getEndTime())
                                 .build())
                 .toList();
-        return GlobalResponseBuilder.buildSuccessResponseWithData("Doctor schedule fetched succesfully",doctorScheduleResponseList);
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Doctor schedule fetched succesfully", doctorScheduleResponseList);
+    }
+
+    @Override
+    public GlobalResponse getAvailableSlots(String doctorId) {
+        List<DoctorScheduleEntity> availableSlots = doctorScheduleRepository.findByDoctorIdAndAvailableTrue(doctorId);
+
+        List<DoctorScheduleResponse> availableSlotResponses =availableSlots.stream().
+                map(slot ->{
+                    return modelMapper.map(slot, DoctorScheduleResponse.class);
+                }).toList();
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Available slots fetched succesfully", availableSlotResponses);
     }
 
 }

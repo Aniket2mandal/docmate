@@ -13,10 +13,29 @@ import java.util.List;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DoctorResponse {
+    private String doctorId;
     private UserResponse user;
     private String specialization;
     private double experience;
     private String qualification;
     private String consultation_fee;
-    private DoctorScheduleResponse schedule;
+    private double rating;
+    private int ratingCount;
+
+    private List<DoctorScheduleResponse> schedules;
+
+//    for recommendation scoring
+    private double ratingScore;
+
+    private double experienceScore;
+
+    private double specializationScore;
+
+    private double availabilityScore;
+
+    private double finalScore;
+
+    private String aiPredictedSpecialization;
+
+    private Double aiConfidence;
 }
