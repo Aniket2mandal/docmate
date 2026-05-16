@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,6 +94,29 @@ public class DoctorRecommendationServiceImpl implements DoctorRecommendationServ
 
                             }).toList();
 
+                    double ratingScore = calculateRatingScore(
+                            doctor.getRating(),
+                            doctor.getRatingCount()
+                    );
+
+                    double experienceScore = calculateExperienceScore(
+                            doctor.getExperience()
+                    );
+
+                    double specializationScore = calculateSpecializationScore(
+                            doctor,
+                            normalizedSpecializations
+                    );
+
+//                    using Weighted Scoring Algorithm / MCDM.
+
+                    //combining multiple criteria:Rating,Experience,Specialization match
+//                   Each one has a weight:Rating = 35%,Experience = 25%,Specialization = 25%
+
+//                  ratingScore contributes 35% ,experienceScore contributes 25% .specializationScore contributes 25%
+                    double finalScore = ((0.35 * ratingScore) + (0.25 * experienceScore) + (0.25 * specializationScore)) * 10;
+
+
                     DoctorResponse doctorResponse = modelMapper.map(doctor, DoctorResponse.class);
                     doctorResponse.setDoctorId(doctor.getId());
                     if (doctor.getUser() != null) {
@@ -104,9 +128,15 @@ public class DoctorRecommendationServiceImpl implements DoctorRecommendationServ
                         doctorResponse.setUser(userResponse);
                     }
                     doctorResponse.setSchedules(doctorScheduleResponses);
+                    doctorResponse.setRatingScore(roundTwoDecimal(ratingScore));
+                    doctorResponse.setExperienceScore(roundTwoDecimal(experienceScore));
+                    doctorResponse.setSpecializationScore(roundTwoDecimal(specializationScore));
+                    doctorResponse.setFinalScore(roundTwoDecimal(finalScore));
+
                     return doctorResponse;
 
-                }).toList();
+                }) .sorted(Comparator.comparing(DoctorResponse::getFinalScore).reversed())
+                .toList();
 
         return GlobalResponseBuilder.buildSuccessResponseWithData("All doctor fetched successfully", doctorResponses);
     }
@@ -123,6 +153,50 @@ public class DoctorRecommendationServiceImpl implements DoctorRecommendationServ
 
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
+    }
+
+    private double calculateRatingScore(double rating, int ratingCount) {
+
+        if (ratingCount <= 0) {
+            return 3.5 / 5.0;
+        }
+
+        return Math.min(rating / 5.0, 1.0);
+    }
+
+    private double calculateExperienceScore(double experience) {
+
+        if (experience <= 0) {
+            return 0;
+        }
+//        15 is used as a maximum benchmark experience.
+//        15 years or more experience = full experience score
+        return Math.min(experience / 15.0, 1.0);
+    }
+
+    private double calculateSpecializationScore(
+            DoctorEntity doctor,
+            List<String> normalizedSpecializations
+    ) {
+
+        if (doctor.getSpecialization() == null) {
+            return 0;
+        }
+
+        String doctorSpecialization = doctor.getSpecialization()
+                .trim()
+                .toLowerCase();
+
+
+//        AI predicted = cardiologist
+//          Doctor specialization = cardiologist
+//        specializationScore = 1.0
+
+        return normalizedSpecializations.contains(doctorSpecialization) ? 1.0 : 0.0;
+    }
+
+    private double roundTwoDecimal(double value) {
+        return Math.round(value * 100.0) / 100.0;
     }
 
 }
