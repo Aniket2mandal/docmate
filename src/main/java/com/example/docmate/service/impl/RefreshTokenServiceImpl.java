@@ -48,6 +48,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     public GlobalResponse rotateAccessToken(String refreshToken) {
 
+        refreshToken = refreshToken
+                .replace("\r", "")
+                .replace("\n", "")
+                .trim();
+
         if (!jwtUtils.extractTokenType(refreshToken).equals("REFRESH")) {
             throw new GlobalException("Invalid token type", HttpStatus.BAD_REQUEST);
         }

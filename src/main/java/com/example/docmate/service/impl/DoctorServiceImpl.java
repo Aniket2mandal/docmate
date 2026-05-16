@@ -162,7 +162,7 @@ public class DoctorServiceImpl implements DoctorService {
         //if request is using id and your entity has both id and join column than modelMapper will
         // not work and you have to use builder
 
-        String email =commonMethods.getAuthenticatedUserEmail();
+        String email = commonMethods.getAuthenticatedUserEmail();
 
         UserEntity userEntity = userRepository.findByEmail(email)
                 .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -176,11 +176,11 @@ public class DoctorServiceImpl implements DoctorService {
         LocalDate endDate = scheduleRequest.getEndDate();
 
 
-        if(startDate.isBefore(LocalDate.now())) {
+        if (startDate.isBefore(LocalDate.now())) {
             throw new GlobalException("Start date must be in the future", HttpStatus.BAD_REQUEST);
         }
 
-        if(scheduleRequest.getStartTime().isAfter(scheduleRequest.getEndTime())){
+        if (scheduleRequest.getStartTime().isAfter(scheduleRequest.getEndTime())) {
             throw new GlobalException("Start time must be before end time", HttpStatus.BAD_REQUEST);
         }
 
@@ -188,9 +188,9 @@ public class DoctorServiceImpl implements DoctorService {
         DoctorEntity doctorEntity = doctorRepository.findByUserId(userEntity.getId())
                 .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        List<DoctorScheduleEntity> doctorScheduleEntityList =new ArrayList<>();
+        List<DoctorScheduleEntity> doctorScheduleEntityList = new ArrayList<>();
 
-        while(startDate.isBefore(endDate) || startDate.isEqual(endDate)) {
+        while (startDate.isBefore(endDate) || startDate.isEqual(endDate)) {
 
             if (startDate.isEqual(LocalDate.now())) {
                 if (scheduleRequest.getStartTime().isBefore(LocalTime.now())) {
@@ -213,7 +213,7 @@ public class DoctorServiceImpl implements DoctorService {
                 );
             }
 
-            DoctorScheduleEntity doctorScheduleEntity= DoctorScheduleEntity.builder()
+            DoctorScheduleEntity doctorScheduleEntity = DoctorScheduleEntity.builder()
                     .availableDay(startDate.getDayOfWeek())
                     .startDate(startDate)
                     .endDate(endDate)
@@ -253,12 +253,50 @@ public class DoctorServiceImpl implements DoctorService {
     public GlobalResponse getAvailableSlots(String doctorId) {
         List<DoctorScheduleEntity> availableSlots = doctorScheduleRepository.findByDoctorIdAndAvailableTrue(doctorId);
 
-        List<DoctorScheduleResponse> availableSlotResponses =availableSlots.stream().
-                map(slot ->{
-                    return modelMapper.map(slot, DoctorScheduleResponse.class);
+//        Duplicated code
+
+        List<DoctorScheduleResponse> availableSlotResponses = availableSlots.stream().
+                map(slot -> {
+                    DoctorScheduleResponse doctorScheduleResponse= modelMapper.map(slot, DoctorScheduleResponse.class);
+                    doctorScheduleResponse.setStartDate(slot.getStartDate());
+                    doctorScheduleResponse.setEndDate(slot.getEndDate());
+                    doctorScheduleResponse.setStartTime(slot.getStartTime());
+                    doctorScheduleResponse.setEndTime(slot.getEndTime());
+                    return doctorScheduleResponse;
                 }).toList();
 
         return GlobalResponseBuilder.buildSuccessResponseWithData("Available slots fetched succesfully", availableSlotResponses);
+    }
+
+    @Override
+    public GlobalResponse getDoctorDetails(String doctorId) {
+
+        DoctorEntity doctorEntity = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        DoctorResponse doctorResponse = modelMapper.map(doctorEntity, DoctorResponse.class);
+        doctorResponse.setDoctorId(doctorEntity.getId());
+        if (doctorEntity.getUser() != null) {
+            UserResponse userResponse = modelMapper.map(doctorEntity.getUser(), UserResponse.class);
+            doctorResponse.setUser(userResponse);
+        }
+
+        List<DoctorScheduleEntity> doctorScheduleEntity = doctorScheduleRepository.findByDoctorId(doctorId);
+
+        List<DoctorScheduleResponse> doctorScheduleResponseList = doctorScheduleEntity.stream()
+                .map(schedule -> {
+                    DoctorScheduleResponse doctorScheduleResponse=modelMapper.map(schedule, DoctorScheduleResponse.class);
+                    doctorScheduleResponse.setStartDate(schedule.getStartDate());
+                    doctorScheduleResponse.setEndDate(schedule.getEndDate());
+                    doctorScheduleResponse.setStartTime(schedule.getStartTime());
+                    doctorScheduleResponse.setEndTime(schedule.getEndTime());
+
+                    return doctorScheduleResponse;
+                })
+                .toList();
+        doctorResponse.setSchedules(doctorScheduleResponseList);
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Doctor Details", doctorResponse);
     }
 
 }

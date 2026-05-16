@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,5 +31,10 @@ public class publicController {
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException(ex);
         }
+    }
+
+    @GetMapping("/get-doctor-details/{doctorId}")
+    public ResponseEntity<GlobalResponse> getDoctorDetails(@PathVariable String doctorId) {
+        return ResponseEntity.ok(doctorService.getDoctorDetails(doctorId));
     }
 }

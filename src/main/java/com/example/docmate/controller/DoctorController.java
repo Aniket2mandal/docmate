@@ -21,12 +21,14 @@ public class DoctorController {
     public ResponseEntity<GlobalResponse> createDoctorSchedule(@RequestBody DoctorScheduleRequest scheduleRequest){
      return ResponseEntity.ok(doctorService.createDoctorSchedule(scheduleRequest));
  }
- @GetMapping("/get-all-schedule/{doctorId}")
+    @GetMapping("/get-all-schedule/{doctorId}")
     public ResponseEntity<GlobalResponse> getAllSchedule(@PathVariable String doctorId){
-     return ResponseEntity.ok(doctorService.getAllSchedule(doctorId));
- }
+        return ResponseEntity.ok(doctorService.getAllSchedule(doctorId));
+    }
+
  @GetMapping("/get-available-slots/{doctorId}")
     public ResponseEntity<GlobalResponse> getAvailableSlots(@PathVariable String doctorId){
      return ResponseEntity.ok(doctorService.getAvailableSlots(doctorId));
  }
+
 }

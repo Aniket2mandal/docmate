@@ -56,6 +56,7 @@ public class AdminController {
     }
 
 
+    //not needed already in public controller
     @GetMapping("/get-doctor/{id}")
     public ResponseEntity<GlobalResponse> getDoctorById(@PathVariable String id) {
         return ResponseEntity.ok(doctorService.getDoctorById(id));
