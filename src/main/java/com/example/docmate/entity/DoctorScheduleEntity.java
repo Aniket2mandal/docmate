@@ -4,7 +4,10 @@ import com.example.docmate.enums.WeekDay;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "tbl_doctor_schedule")
@@ -17,13 +20,19 @@ public class DoctorScheduleEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "available_day")
-    private WeekDay availableDay;
+    private DayOfWeek availableDay;
+
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
 
     @Column(name = "start_time")
-    private LocalDateTime startTime;
+    private LocalTime startTime;
 
     @Column(name = "end_time")
-    private LocalDateTime endTime;
+    private LocalTime endTime;
 
     @Column(name = "available")
     @Builder.Default

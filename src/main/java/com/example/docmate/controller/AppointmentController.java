@@ -45,4 +45,9 @@ public class AppointmentController {
     public ResponseEntity<GlobalResponse> getDoctorsPreviousAppointment(@PathVariable String doctorId) {
         return ResponseEntity.ok(appointmentService.getDoctorsPreviousAppointment(doctorId));
     }
+
+    @GetMapping("/get-appointment-details/{appointmentId}")
+    public ResponseEntity<GlobalResponse> getAppointmentDetails(@PathVariable String appointmentId) {
+        return ResponseEntity.ok(appointmentService.getAppointmentDetails(appointmentId));
+    }
 }

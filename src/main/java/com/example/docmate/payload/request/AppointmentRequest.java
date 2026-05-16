@@ -8,7 +8,9 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Getter
 @Setter
@@ -18,7 +20,8 @@ import java.time.LocalDateTime;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AppointmentRequest {
     private String doctorId;
-    private String patientId;
-    private LocalDateTime appointmentDateTime; // ISO 8601 format
+//    private String patientId;
+    private LocalDate appointmentDate;
+    private LocalTime appointmentTime;
     private String reasonForVisit;
 }

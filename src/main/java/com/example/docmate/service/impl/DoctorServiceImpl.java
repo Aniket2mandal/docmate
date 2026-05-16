@@ -20,6 +20,7 @@ import com.example.docmate.repository.DoctorScheduleRepository;
 import com.example.docmate.repository.RoleRepository;
 import com.example.docmate.repository.UserRepository;
 import com.example.docmate.service.DoctorService;
+import com.example.docmate.utils.CommonMethods;
 import com.example.docmate.utils.MyConstants;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -30,6 +31,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.springframework.util.ObjectUtils.isEmpty;
@@ -44,6 +49,7 @@ public class DoctorServiceImpl implements DoctorService {
     private final DoctorRepository doctorRepository;
     private final ModelMapper modelMapper;
     private final DoctorScheduleRepository doctorScheduleRepository;
+    private final CommonMethods commonMethods;
 
     @Override
     public GlobalResponse createDoctor(DoctorRequest doctor) {
@@ -156,19 +162,72 @@ public class DoctorServiceImpl implements DoctorService {
         //if request is using id and your entity has both id and join column than modelMapper will
         // not work and you have to use builder
 
-//        DoctorScheduleEntity doctorScheduleEntity=modelMapper.map(scheduleRequest,DoctorScheduleEntity.class);
+        String email =commonMethods.getAuthenticatedUserEmail();
 
-        DoctorEntity doctorEntity = doctorRepository.findById(scheduleRequest.getDoctorId())
+        UserEntity userEntity = userRepository.findByEmail(email)
+                .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        if (userEntity.getRole() == null || userEntity.getRole().getName() != Role.DOCTOR) {
+            throw new GlobalException(MyConstants.ERR_MSG_UNAUTHORIZED, HttpStatus.FORBIDDEN);
+        }
+
+//        DoctorScheduleEntity doctorScheduleEntity=modelMapper.map(scheduleRequest,DoctorScheduleEntity.class);
+        LocalDate startDate = scheduleRequest.getStartDate();
+        LocalDate endDate = scheduleRequest.getEndDate();
+
+
+        if(startDate.isBefore(LocalDate.now())) {
+            throw new GlobalException("Start date must be in the future", HttpStatus.BAD_REQUEST);
+        }
+
+        if(scheduleRequest.getStartTime().isAfter(scheduleRequest.getEndTime())){
+            throw new GlobalException("Start time must be before end time", HttpStatus.BAD_REQUEST);
+        }
+
+
+        DoctorEntity doctorEntity = doctorRepository.findByUserId(userEntity.getId())
                 .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        DoctorScheduleEntity doctorScheduleEntity = DoctorScheduleEntity.builder()
-                .availableDay(scheduleRequest.getAvailableDay())
-                .startTime(scheduleRequest.getStartTime())
-                .endTime(scheduleRequest.getEndTime())
-                .doctor(doctorEntity)
-                .build();
+        List<DoctorScheduleEntity> doctorScheduleEntityList =new ArrayList<>();
 
-        doctorScheduleRepository.save(doctorScheduleEntity);
+        while(startDate.isBefore(endDate) || startDate.isEqual(endDate)) {
+
+            if (startDate.isEqual(LocalDate.now())) {
+                if (scheduleRequest.getStartTime().isBefore(LocalTime.now())) {
+                    throw new GlobalException("Start time must be in the future", HttpStatus.BAD_REQUEST);
+                }
+            }
+
+            boolean scheduleAlreadyExists =
+                    doctorScheduleRepository.existsOverlappingSchedule(
+                            doctorEntity.getId(),
+                            startDate,
+                            scheduleRequest.getStartTime(),
+                            scheduleRequest.getEndTime()
+                    );
+
+            if (scheduleAlreadyExists) {
+                throw new GlobalException(
+                        "Schedule already exists for doctor on " + startDate,
+                        HttpStatus.BAD_REQUEST
+                );
+            }
+
+            DoctorScheduleEntity doctorScheduleEntity= DoctorScheduleEntity.builder()
+                    .availableDay(startDate.getDayOfWeek())
+                    .startDate(startDate)
+                    .endDate(endDate)
+                    .startTime(scheduleRequest.getStartTime())
+                    .endTime(scheduleRequest.getEndTime())
+                    .doctor(doctorEntity)
+                    .build();
+
+            doctorScheduleEntityList.add(doctorScheduleEntity);
+
+            startDate = startDate.plusDays(1);
+        }
+
+        doctorScheduleRepository.saveAll(doctorScheduleEntityList);
         return GlobalResponseBuilder.buildSuccessResponse("Doctor Schedule created");
     }
 
@@ -181,6 +240,8 @@ public class DoctorServiceImpl implements DoctorService {
                         DoctorScheduleResponse.builder()
                                 .id(schedule.getId())
                                 .availableDay(schedule.getAvailableDay())
+                                .startDate(schedule.getStartDate())
+                                .endDate(schedule.getEndDate())
                                 .startTime(schedule.getStartTime())
                                 .endTime(schedule.getEndTime())
                                 .build())

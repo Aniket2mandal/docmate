@@ -8,7 +8,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 
 @Getter
@@ -22,7 +24,8 @@ public class AppointmentResponse {
     private DoctorResponse doctor;
     private PatientResponse patient;
 //    private String patientId;
-    private LocalDateTime appointmentDateTime;
+private LocalDate appointmentDate;
+    private LocalTime appointmentTime;
     private AppointmentStatus status;
     private String reasonForVisit;
 
