@@ -11,9 +11,14 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface DoctorScheduleRepository extends JpaRepository<DoctorScheduleEntity, String> {
     List<DoctorScheduleEntity> findByDoctorIdAndStartDateAndAvailableTrue(String doctorId, LocalDate date);
+
+    Optional<DoctorScheduleEntity> findByDoctorIdAndStartDateAndStartTimeAndAvailableTrue(
+            String doctorId, LocalDate date, LocalTime startTime);
+
    List<DoctorScheduleEntity> findByDoctorId(String doctorId);
     List<DoctorScheduleEntity> findByDoctorIdAndAvailableTrue(String doctorId);
     List<DoctorScheduleEntity> findAvailableSlotsForDoctorsByAvailableTrue(List<String> doctorIds);

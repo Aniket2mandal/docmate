@@ -47,21 +47,21 @@ public class AppointmentServiceImpl implements AppointmentService {
     public GlobalResponse bookAppointment(AppointmentRequest appointmentRequest) {
 
 
-        String email =commonMethods.getAuthenticatedUserEmail();
+        String email = commonMethods.getAuthenticatedUserEmail();
 
-            UserEntity userEntity = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+        UserEntity userEntity = userRepository.findByEmail(email)
+                .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
 
         LocalDate appointmentDate = appointmentRequest.getAppointmentDate();
         LocalTime appointmentTime = appointmentRequest.getAppointmentTime();
 
-        if(appointmentDate.isBefore(LocalDate.now())) {
+        if (appointmentDate.isBefore(LocalDate.now())) {
             throw new GlobalException("Start date must be in the future", HttpStatus.BAD_REQUEST);
         }
 
-        if(appointmentDate.isEqual(LocalDate.now())) {
-            if(appointmentTime.isBefore(LocalTime.now())) {
+        if (appointmentDate.isEqual(LocalDate.now())) {
+            if (appointmentTime.isBefore(LocalTime.now())) {
                 throw new GlobalException("Time must be in the future", HttpStatus.BAD_REQUEST);
             }
         }
@@ -72,24 +72,43 @@ public class AppointmentServiceImpl implements AppointmentService {
         PatientEntity patientEntity = patientRepository.findByUserId(userEntity.getId())
                 .orElseThrow(() -> new GlobalException("Patient " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        List<DoctorScheduleEntity> schedules =
-                doctorScheduleRepository.findByDoctorIdAndStartDateAndAvailableTrue(
-                        doctorEntity.getId(),
-                        appointmentDate
-                );
+//        List<DoctorScheduleEntity> schedules =
+//                doctorScheduleRepository.findByDoctorIdAndStartDateAndAvailableTrue(
+//                        doctorEntity.getId(),
+//                        appointmentDate
+//                );
+//
+//        boolean isAvailable = schedules.stream()
+//                .anyMatch(schedule ->
+//                        !appointmentTime.isBefore(schedule.getStartTime()) &&
+//                                appointmentTime.isBefore(schedule.getEndTime())
+//                );
+//
+//        if (!isAvailable) {
+//            throw new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_AVAILABLE, HttpStatus.BAD_REQUEST);
+//        }
+//
+//        DoctorScheduleEntity doctorScheduleEntity = schedules.stream()
+//                .filter(schedule ->
+//                        !appointmentTime.isBefore(schedule.getStartTime()) &&
+//                                appointmentTime.isBefore(schedule.getEndTime())
+//                )
+//                .findFirst()
+//                .orElseThrow(() -> new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_AVAILABLE, HttpStatus.BAD_REQUEST));
 
-        boolean isAvailable = schedules.stream()
-                .anyMatch(schedule ->
-                        !appointmentTime.isBefore(schedule.getStartTime()) &&
-                                appointmentTime.isBefore(schedule.getEndTime())
-                );
-
-        if (!isAvailable) {
-            throw new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_AVAILABLE, HttpStatus.BAD_REQUEST);
-        }
+        DoctorScheduleEntity doctorScheduleEntity =
+                doctorScheduleRepository.findByDoctorIdAndStartDateAndStartTimeAndAvailableTrue(
+                                doctorEntity.getId(),
+                                appointmentDate,
+                                appointmentTime
+                        )
+                        .orElseThrow(() -> new GlobalException(
+                                "Appointment " + MyConstants.ERR_MSG_NOT_AVAILABLE,
+                                HttpStatus.BAD_REQUEST
+                        ));
 
         if (appointmentRepository.existsByPatientIdAndDoctorIdAndAppointmentDateAndAppointmentTimeAndStatus(
-               patientEntity.getId(),
+                patientEntity.getId(),
                 appointmentRequest.getDoctorId(),
                 appointmentDate,
                 appointmentTime,
@@ -114,9 +133,14 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .reasonForVisit(appointmentRequest.getReasonForVisit())
                 .doctor(doctorEntity)
                 .patient(patientEntity)
+                .doctorSchedule(doctorScheduleEntity)
                 .build();
-
         appointmentRepository.save(appointmentEntity);
+
+        if (appointmentEntity.getId() != null) {
+            doctorScheduleEntity.setAvailable(false);
+            doctorScheduleRepository.save(doctorScheduleEntity);
+        }
 
         return GlobalResponseBuilder.buildSuccessResponse("Appointment booked successfully");
     }
@@ -141,7 +165,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         List<AppointmentEntity> appointmentEntityList =
                 appointmentRepository.findUpcomingAppointmentsByPatientId(
-                        patientId, nowDate ,nowTime, AppointmentStatus.BOOKED);
+                        patientId, nowDate, nowTime, AppointmentStatus.BOOKED);
 
         List<AppointmentResponse> appointmentResponseList = mapAppointments(appointmentEntityList);
 
@@ -159,7 +183,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         List<AppointmentEntity> appointmentEntityList =
                 appointmentRepository.findUpcomingAppointmentsByDoctorId(
-                        doctorId, nowDate,nowTime, AppointmentStatus.BOOKED);
+                        doctorId, nowDate, nowTime, AppointmentStatus.BOOKED);
 
         List<AppointmentResponse> appointmentResponseList = mapAppointments(appointmentEntityList);
 
@@ -177,7 +201,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         List<AppointmentEntity> appointmentEntityList =
                 appointmentRepository.findPreviousAppointmentsByPatientId(
-                        patientId, nowDate,nowTime, AppointmentStatus.COMPLETED);
+                        patientId, nowDate, nowTime, AppointmentStatus.COMPLETED);
 
         List<AppointmentResponse> appointmentResponseList = mapAppointments(appointmentEntityList);
 
@@ -196,7 +220,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         List<AppointmentEntity> appointmentEntityList =
                 appointmentRepository.findPreviousAppointmentsByDoctorId(
-                        doctorId,  nowDate,nowTime, AppointmentStatus.COMPLETED);
+                        doctorId, nowDate, nowTime, AppointmentStatus.COMPLETED);
 
         List<AppointmentResponse> appointmentResponseList = mapAppointments(appointmentEntityList);
 

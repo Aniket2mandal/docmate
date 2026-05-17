@@ -54,4 +54,11 @@ public class AppointmentEntity extends BaseEntity {
 
     @Column(name="patient_id", insertable = false, updatable = false)
     private String patientId;
+
+    @ManyToOne(fetch= FetchType.LAZY)
+    @JoinColumn(name="doctor_schedule_id", referencedColumnName = "id")
+    private DoctorScheduleEntity doctorSchedule;
+
+    @Column(name="doctor_schedule_id", insertable = false, updatable = false)
+    private String doctorScheduleId;
 }

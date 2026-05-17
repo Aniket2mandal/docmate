@@ -35,6 +35,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.springframework.util.ObjectUtils.isEmpty;
@@ -175,7 +176,6 @@ public class DoctorServiceImpl implements DoctorService {
         LocalDate startDate = scheduleRequest.getStartDate();
         LocalDate endDate = scheduleRequest.getEndDate();
 
-
         if (startDate.isBefore(LocalDate.now())) {
             throw new GlobalException("Start date must be in the future", HttpStatus.BAD_REQUEST);
         }
@@ -184,6 +184,19 @@ public class DoctorServiceImpl implements DoctorService {
             throw new GlobalException("Start time must be before end time", HttpStatus.BAD_REQUEST);
         }
 
+        if (scheduleRequest.getStartTime().getMinute() != 0 && scheduleRequest.getStartTime().getMinute() != 30) {
+            throw new GlobalException(
+                    "Start time minute must be 00 or 30. Example: 12:00, 12:30",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        if (scheduleRequest.getEndTime().getMinute() != 0 && scheduleRequest.getEndTime().getMinute() != 30) {
+            throw new GlobalException(
+                    "End time minute must be 00 or 30. Example: 12:00, 12:30",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
 
         DoctorEntity doctorEntity = doctorRepository.findByUserId(userEntity.getId())
                 .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -192,37 +205,46 @@ public class DoctorServiceImpl implements DoctorService {
 
         while (startDate.isBefore(endDate) || startDate.isEqual(endDate)) {
 
-            if (startDate.isEqual(LocalDate.now())) {
-                if (scheduleRequest.getStartTime().isBefore(LocalTime.now())) {
-                    throw new GlobalException("Start time must be in the future", HttpStatus.BAD_REQUEST);
+            LocalTime slotStartTime = scheduleRequest.getStartTime();
+            LocalTime slotEndTime = slotStartTime.plusMinutes(30);
+
+            while(slotStartTime.isBefore(scheduleRequest.getEndTime())) {
+
+                if (startDate.isEqual(LocalDate.now())) {
+                    if (scheduleRequest.getStartTime().isBefore(LocalTime.now())) {
+                        throw new GlobalException("Start time must be in the future", HttpStatus.BAD_REQUEST);
+                    }
                 }
-            }
 
-            boolean scheduleAlreadyExists =
-                    doctorScheduleRepository.existsOverlappingSchedule(
-                            doctorEntity.getId(),
-                            startDate,
-                            scheduleRequest.getStartTime(),
-                            scheduleRequest.getEndTime()
+                boolean scheduleAlreadyExists =
+                        doctorScheduleRepository.existsOverlappingSchedule(
+                                doctorEntity.getId(),
+                                startDate,
+                                slotStartTime,
+                                slotEndTime
+                        );
+
+                if (scheduleAlreadyExists) {
+                    throw new GlobalException(
+                            "Schedule already exists for doctor on " + startDate,
+                            HttpStatus.BAD_REQUEST
                     );
+                }
 
-            if (scheduleAlreadyExists) {
-                throw new GlobalException(
-                        "Schedule already exists for doctor on " + startDate,
-                        HttpStatus.BAD_REQUEST
-                );
+                DoctorScheduleEntity doctorScheduleEntity = DoctorScheduleEntity.builder()
+                        .availableDay(startDate.getDayOfWeek())
+                        .startDate(startDate)
+                        .endDate(endDate)
+                        .startTime(slotStartTime)
+                        .endTime(slotEndTime)
+                        .doctor(doctorEntity)
+                        .build();
+
+                slotStartTime = slotStartTime.plusMinutes(30);
+                slotEndTime = slotEndTime.plusMinutes(30);
+
+                doctorScheduleEntityList.add(doctorScheduleEntity);
             }
-
-            DoctorScheduleEntity doctorScheduleEntity = DoctorScheduleEntity.builder()
-                    .availableDay(startDate.getDayOfWeek())
-                    .startDate(startDate)
-                    .endDate(endDate)
-                    .startTime(scheduleRequest.getStartTime())
-                    .endTime(scheduleRequest.getEndTime())
-                    .doctor(doctorEntity)
-                    .build();
-
-            doctorScheduleEntityList.add(doctorScheduleEntity);
 
             startDate = startDate.plusDays(1);
         }
@@ -255,15 +277,20 @@ public class DoctorServiceImpl implements DoctorService {
 
 //        Duplicated code
 
-        List<DoctorScheduleResponse> availableSlotResponses = availableSlots.stream().
-                map(slot -> {
+        List<DoctorScheduleResponse> availableSlotResponses = availableSlots.stream()
+                .sorted(
+                Comparator.comparing(DoctorScheduleEntity::getStartDate)
+                        .thenComparing(DoctorScheduleEntity::getStartTime)
+                )
+                .map(slot -> {
                     DoctorScheduleResponse doctorScheduleResponse= modelMapper.map(slot, DoctorScheduleResponse.class);
                     doctorScheduleResponse.setStartDate(slot.getStartDate());
                     doctorScheduleResponse.setEndDate(slot.getEndDate());
                     doctorScheduleResponse.setStartTime(slot.getStartTime());
                     doctorScheduleResponse.setEndTime(slot.getEndTime());
                     return doctorScheduleResponse;
-                }).toList();
+                })
+                .toList();
 
         return GlobalResponseBuilder.buildSuccessResponseWithData("Available slots fetched succesfully", availableSlotResponses);
     }
