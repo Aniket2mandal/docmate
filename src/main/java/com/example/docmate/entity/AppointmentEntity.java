@@ -15,7 +15,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "tbl_appointment")
@@ -26,8 +28,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class AppointmentEntity extends BaseEntity {
 
-    @Column(name="appointment_date_time")
-    private LocalDateTime appointmentDateTime;
+    @Column(name = "appointment_date")
+    private LocalDate appointmentDate;
+
+    @Column(name = "appointment_time")
+    private LocalTime appointmentTime;
 
     @Enumerated(EnumType.STRING)
     @Column(name="appointment_status")
@@ -49,4 +54,11 @@ public class AppointmentEntity extends BaseEntity {
 
     @Column(name="patient_id", insertable = false, updatable = false)
     private String patientId;
+
+    @ManyToOne(fetch= FetchType.LAZY)
+    @JoinColumn(name="doctor_schedule_id", referencedColumnName = "id")
+    private DoctorScheduleEntity doctorSchedule;
+
+    @Column(name="doctor_schedule_id", insertable = false, updatable = false)
+    private String doctorScheduleId;
 }

@@ -4,6 +4,7 @@ import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -16,7 +17,8 @@ public class CommonMethods {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (authentication == null || !authentication.isAuthenticated()||
+                authentication instanceof AnonymousAuthenticationToken) {
             throw new GlobalException(" User is not authenticated ", HttpStatus.UNAUTHORIZED);
         }
         //getName() returns the "principal" (the main identifier), which YOU set as the email when creating the JWT token! so it returns email

@@ -11,6 +11,7 @@ public interface AppointmentService {
     GlobalResponse getDoctorsUpcomingAppointment(String doctorId);
     GlobalResponse getPatientsPreviousAppointment(String patientId);
     GlobalResponse getDoctorsPreviousAppointment(String doctorId);
+    GlobalResponse getAppointmentDetails(String appointmentId);
 
 
 

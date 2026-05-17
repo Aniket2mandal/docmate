@@ -19,7 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "http://localhost:5173")
+
 @RestController
 @RequestMapping("/admin")
 @RequiredArgsConstructor
@@ -56,6 +56,7 @@ public class AdminController {
     }
 
 
+    //not needed already in public controller
     @GetMapping("/get-doctor/{id}")
     public ResponseEntity<GlobalResponse> getDoctorById(@PathVariable String id) {
         return ResponseEntity.ok(doctorService.getDoctorById(id));

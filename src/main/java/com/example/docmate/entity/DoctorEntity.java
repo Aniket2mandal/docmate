@@ -34,6 +34,14 @@ public class DoctorEntity extends BaseEntity {
     @Column(name = "consultation_fee")
     private String consultation_fee;
 
+    @Column(name = "rating")
+    @Builder.Default
+    private double rating = 0.0;
+
+    @Column(name = "rating_count")
+    @Builder.Default
+    private int ratingCount = 0;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private UserEntity user;

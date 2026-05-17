@@ -25,7 +25,10 @@ import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -43,49 +46,101 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public GlobalResponse bookAppointment(AppointmentRequest appointmentRequest) {
 
+
+        String email = commonMethods.getAuthenticatedUserEmail();
+
+        UserEntity userEntity = userRepository.findByEmail(email)
+                .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+
+        LocalDate appointmentDate = appointmentRequest.getAppointmentDate();
+        LocalTime appointmentTime = appointmentRequest.getAppointmentTime();
+
+        if (appointmentDate.isBefore(LocalDate.now())) {
+            throw new GlobalException("Start date must be in the future", HttpStatus.BAD_REQUEST);
+        }
+
+        if (appointmentDate.isEqual(LocalDate.now())) {
+            if (appointmentTime.isBefore(LocalTime.now())) {
+                throw new GlobalException("Time must be in the future", HttpStatus.BAD_REQUEST);
+            }
+        }
+
         DoctorEntity doctorEntity = doctorRepository.findById(appointmentRequest.getDoctorId())
                 .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        PatientEntity patientEntity = patientRepository.findById(appointmentRequest.getPatientId())
+        PatientEntity patientEntity = patientRepository.findByUserId(userEntity.getId())
                 .orElseThrow(() -> new GlobalException("Patient " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        LocalDateTime appointmentTime = appointmentRequest.getAppointmentDateTime();
+//        List<DoctorScheduleEntity> schedules =
+//                doctorScheduleRepository.findByDoctorIdAndStartDateAndAvailableTrue(
+//                        doctorEntity.getId(),
+//                        appointmentDate
+//                );
+//
+//        boolean isAvailable = schedules.stream()
+//                .anyMatch(schedule ->
+//                        !appointmentTime.isBefore(schedule.getStartTime()) &&
+//                                appointmentTime.isBefore(schedule.getEndTime())
+//                );
+//
+//        if (!isAvailable) {
+//            throw new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_AVAILABLE, HttpStatus.BAD_REQUEST);
+//        }
+//
+//        DoctorScheduleEntity doctorScheduleEntity = schedules.stream()
+//                .filter(schedule ->
+//                        !appointmentTime.isBefore(schedule.getStartTime()) &&
+//                                appointmentTime.isBefore(schedule.getEndTime())
+//                )
+//                .findFirst()
+//                .orElseThrow(() -> new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_AVAILABLE, HttpStatus.BAD_REQUEST));
 
-        WeekDay day = WeekDay.valueOf(appointmentTime.getDayOfWeek().name());
+        DoctorScheduleEntity doctorScheduleEntity =
+                doctorScheduleRepository.findByDoctorIdAndStartDateAndStartTimeAndAvailableTrue(
+                                doctorEntity.getId(),
+                                appointmentDate,
+                                appointmentTime
+                        )
+                        .orElseThrow(() -> new GlobalException(
+                                "Appointment " + MyConstants.ERR_MSG_NOT_AVAILABLE,
+                                HttpStatus.BAD_REQUEST
+                        ));
 
-        List<DoctorScheduleEntity> schedules =
-                doctorScheduleRepository.findByDoctorIdAndAvailableDayAndAvailableTrue(
-                        doctorEntity.getId(),
-                        day
-                );
-
-        boolean isAvailable = schedules.stream()
-                .anyMatch(schedule ->
-                        appointmentTime.isAfter(schedule.getStartTime()) &&
-                                appointmentTime.isBefore(schedule.getEndTime())
-                );
-        if (!isAvailable) {
-            throw new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_AVAILABLE, HttpStatus.BAD_REQUEST);
-        }
-
-        if (appointmentRepository.existsByPatientIdAndDoctorIdAndAppointmentDateTimeAndStatus(
-                appointmentRequest.getPatientId(),
+        if (appointmentRepository.existsByPatientIdAndDoctorIdAndAppointmentDateAndAppointmentTimeAndStatus(
+                patientEntity.getId(),
                 appointmentRequest.getDoctorId(),
+                appointmentDate,
                 appointmentTime,
                 AppointmentStatus.BOOKED
         )) {
             throw new GlobalException("You already have an appointment at this time", HttpStatus.BAD_REQUEST);
         }
 
+        if (appointmentRepository.existsByDoctorIdAndAppointmentDateAndAppointmentTimeAndStatus(
+                appointmentRequest.getDoctorId(),
+                appointmentDate,
+                appointmentTime,
+                AppointmentStatus.BOOKED
+        )) {
+            throw new GlobalException("No appointment available at this time", HttpStatus.BAD_REQUEST);
+        }
+
         AppointmentEntity appointmentEntity = AppointmentEntity.builder()
-                .appointmentDateTime(appointmentTime)
+                .appointmentDate(appointmentDate)
+                .appointmentTime(appointmentTime)
                 .status(AppointmentStatus.BOOKED)
                 .reasonForVisit(appointmentRequest.getReasonForVisit())
                 .doctor(doctorEntity)
                 .patient(patientEntity)
+                .doctorSchedule(doctorScheduleEntity)
                 .build();
-
         appointmentRepository.save(appointmentEntity);
+
+        if (appointmentEntity.getId() != null) {
+            doctorScheduleEntity.setAvailable(false);
+            doctorScheduleRepository.save(doctorScheduleEntity);
+        }
 
         return GlobalResponseBuilder.buildSuccessResponse("Appointment booked successfully");
     }
@@ -96,92 +151,117 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         List<AppointmentResponse> appointmentResponseList = mapAppointments(appointmentEntityList);
 
-        return GlobalResponseBuilder.buildSuccessResponseWithData("All appointment fetched successfully ",appointmentResponseList);
+        return GlobalResponseBuilder.buildSuccessResponseWithData("All appointment fetched successfully ", appointmentResponseList);
     }
 
     @Override
     public GlobalResponse getPatientsUpcomingAppointment(String patientId) {
 
-        PatientEntity patientEntity=patientRepository.findById(patientId)
+        PatientEntity patientEntity = patientRepository.findById(patientId)
                 .orElseThrow(() -> new GlobalException("Patient " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDate nowDate = LocalDate.now();
+        LocalTime nowTime = LocalTime.now();
 
         List<AppointmentEntity> appointmentEntityList =
-                appointmentRepository.findByPatientIdAndAppointmentDateTimeAfterAndStatus(
-                        patientId, now,AppointmentStatus.BOOKED);
+                appointmentRepository.findUpcomingAppointmentsByPatientId(
+                        patientId, nowDate, nowTime, AppointmentStatus.BOOKED);
 
-        List<AppointmentResponse> appointmentResponseList= mapAppointments(appointmentEntityList);
+        List<AppointmentResponse> appointmentResponseList = mapAppointments(appointmentEntityList);
 
-        return GlobalResponseBuilder.buildSuccessResponseWithData("Upcoming appointment fetched successfully ",appointmentResponseList);
-     }
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Upcoming appointment fetched successfully ", appointmentResponseList);
+    }
 
     @Override
     public GlobalResponse getDoctorsUpcomingAppointment(String doctorId) {
 
-        DoctorEntity doctorEntity=doctorRepository.findById(doctorId)
+        LocalDate nowDate = LocalDate.now();
+        LocalTime nowTime = LocalTime.now();
+
+        DoctorEntity doctorEntity = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         List<AppointmentEntity> appointmentEntityList =
-                appointmentRepository.findByDoctorIdAndAppointmentDateTimeAfterAndStatus(
-                        doctorId, LocalDateTime.now(),AppointmentStatus.BOOKED);
+                appointmentRepository.findUpcomingAppointmentsByDoctorId(
+                        doctorId, nowDate, nowTime, AppointmentStatus.BOOKED);
 
-        List<AppointmentResponse> appointmentResponseList= mapAppointments(appointmentEntityList);
+        List<AppointmentResponse> appointmentResponseList = mapAppointments(appointmentEntityList);
 
-        return GlobalResponseBuilder.buildSuccessResponseWithData("Upcoming appointment fetched successfully ",appointmentResponseList);
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Upcoming appointment fetched successfully ", appointmentResponseList);
     }
 
     @Override
     public GlobalResponse getPatientsPreviousAppointment(String patientId) {
 
-        PatientEntity patientEntity=patientRepository.findById(patientId)
+        PatientEntity patientEntity = patientRepository.findById(patientId)
                 .orElseThrow(() -> new GlobalException("Patient " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDate nowDate = LocalDate.now();
+        LocalTime nowTime = LocalTime.now();
 
         List<AppointmentEntity> appointmentEntityList =
-                appointmentRepository.findByPatientIdAndAppointmentDateTimeBeforeAndStatus(
-                        patientId, now,AppointmentStatus.BOOKED);
+                appointmentRepository.findPreviousAppointmentsByPatientId(
+                        patientId, nowDate, nowTime, AppointmentStatus.COMPLETED);
 
-        List<AppointmentResponse> appointmentResponseList= mapAppointments(appointmentEntityList);
+        List<AppointmentResponse> appointmentResponseList = mapAppointments(appointmentEntityList);
 
-        return GlobalResponseBuilder.buildSuccessResponseWithData("Upcoming appointment fetched successfully ",appointmentResponseList);
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Previous appointment fetched successfully ", appointmentResponseList);
     }
 
 
     @Override
     public GlobalResponse getDoctorsPreviousAppointment(String doctorId) {
 
-        DoctorEntity doctorEntity=doctorRepository.findById(doctorId)
+        LocalDate nowDate = LocalDate.now();
+        LocalTime nowTime = LocalTime.now();
+
+        DoctorEntity doctorEntity = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         List<AppointmentEntity> appointmentEntityList =
-                appointmentRepository.findByDoctorIdAndAppointmentDateTimeBeforeAndStatus(
-                        doctorId, LocalDateTime.now(),AppointmentStatus.COMPLETED);
+                appointmentRepository.findPreviousAppointmentsByDoctorId(
+                        doctorId, nowDate, nowTime, AppointmentStatus.COMPLETED);
 
-        List<AppointmentResponse> appointmentResponseList= mapAppointments(appointmentEntityList);
+        List<AppointmentResponse> appointmentResponseList = mapAppointments(appointmentEntityList);
 
-        return GlobalResponseBuilder.buildSuccessResponseWithData("Upcoming appointment fetched successfully ",appointmentResponseList);
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Previous appointment fetched successfully ", appointmentResponseList);
+    }
+
+    @Override
+    public GlobalResponse getAppointmentDetails(String appointmentId) {
+        AppointmentEntity appointmentEntity = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        AppointmentResponse appointmentResponse = modelMapper.map(appointmentEntity, AppointmentResponse.class);
+
+        DoctorResponse doctorResponse = modelMapper.map(appointmentEntity.getDoctor(), DoctorResponse.class);
+        if (appointmentEntity.getDoctor().getUser() != null) {
+            UserResponse userResponse = modelMapper.map(appointmentEntity.getDoctor().getUser(), UserResponse.class);
+            doctorResponse.setUser(userResponse);
+        }
+        doctorResponse.setDoctorId(appointmentEntity.getDoctor().getId());
+        appointmentResponse.setAppointmentDate(appointmentEntity.getAppointmentDate());
+        appointmentResponse.setAppointmentTime(appointmentEntity.getAppointmentTime());
+        appointmentResponse.setDoctor(doctorResponse);
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Appointment details fetched successfully ", appointmentResponse);
     }
 
 
+    public List<AppointmentResponse> mapAppointments(List<AppointmentEntity> appointmentEntityList) {
 
+        List<AppointmentResponse> appointmentResponseList = appointmentEntityList.stream()
+                .map(appointment -> {
+                            DoctorResponse doctorResponse = modelMapper.map(appointment.getDoctor(), DoctorResponse.class);
+                            if (appointment.getDoctor().getUser() != null) {
+                                UserResponse userResponse = modelMapper.map(appointment.getDoctor().getUser(), UserResponse.class);
+                                if (appointment.getDoctor().getUser().getRole() != null) {
+                                    RoleResponse roleResponse = modelMapper.map(appointment.getDoctor().getUser().getRole(), RoleResponse.class);
+                                    userResponse.setRole(roleResponse.getName());
+                                }
+                                doctorResponse.setUser(userResponse);
+                            }
 
-     public  List<AppointmentResponse> mapAppointments(List<AppointmentEntity> appointmentEntityList) {
-
-         List<AppointmentResponse> appointmentResponseList = appointmentEntityList.stream()
-                 .map(appointment -> {
-                             DoctorResponse doctorResponse = modelMapper.map(appointment.getDoctor(), DoctorResponse.class);
-                             if (appointment.getDoctor().getUser() != null) {
-                                 UserResponse userResponse = modelMapper.map(appointment.getDoctor().getUser(), UserResponse.class);
-                                 if (appointment.getDoctor().getUser().getRole() != null) {
-                                     RoleResponse roleResponse = modelMapper.map(appointment.getDoctor().getUser().getRole(), RoleResponse.class);
-                                     userResponse.setRole(roleResponse.getName());
-                                 }
-                                 doctorResponse.setUser(userResponse);
-                             }
-
-                             PatientResponse patientResponse = modelMapper.map(appointment.getPatient(), PatientResponse.class);
+                            PatientResponse patientResponse = modelMapper.map(appointment.getPatient(), PatientResponse.class);
                             if (appointment.getPatient().getUser() != null) {
                                 UserResponse userResponse = modelMapper.map(appointment.getPatient().getUser(), UserResponse.class);
                                 if (appointment.getDoctor().getUser().getRole() != null) {
@@ -191,21 +271,22 @@ public class AppointmentServiceImpl implements AppointmentService {
                                 patientResponse.setUser(userResponse);
                             }
 
-                             AppointmentResponse appointmentResponse = AppointmentResponse.builder()
-                                     .appointmentId(appointment.getId())
+                            AppointmentResponse appointmentResponse = AppointmentResponse.builder()
+                                    .appointmentId(appointment.getId())
 //                                     .patientId(appointment.getPatientId())
-                                     .doctor(doctorResponse)
-                                     .patient(patientResponse)
-                                     .appointmentDateTime(appointment.getAppointmentDateTime())
-                                     .status(appointment.getStatus())
-                                     .reasonForVisit(appointment.getReasonForVisit())
-                                     .build();
-                             return appointmentResponse;
-                         }
-                 )
-                 .toList();
+                                    .doctor(doctorResponse)
+                                    .patient(patientResponse)
+                                    .appointmentDate(appointment.getAppointmentDate())
+                                    .appointmentTime(appointment.getAppointmentTime())
+                                    .status(appointment.getStatus())
+                                    .reasonForVisit(appointment.getReasonForVisit())
+                                    .build();
+                            return appointmentResponse;
+                        }
+                )
+                .toList();
 
-         return appointmentResponseList;
-     }
+        return appointmentResponseList;
+    }
 
 }
