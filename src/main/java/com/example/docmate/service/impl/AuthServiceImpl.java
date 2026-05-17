@@ -1,5 +1,7 @@
 package com.example.docmate.service.impl;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.example.docmate.entity.DoctorEntity;
 import com.example.docmate.entity.PatientEntity;
 import com.example.docmate.entity.RefreshTokenEntity;
@@ -43,6 +45,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.springframework.boot.autoconfigure.container.ContainerImageMetadata.isPresent;
@@ -63,6 +66,7 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final DoctorRepository doctorRepository;
     private final RefreshTokenService refreshTokenService;
+    private final Cloudinary cloudinary;
 
     public GlobalResponse registerAdmin(UserRequest user) {
 
@@ -215,16 +219,46 @@ public class AuthServiceImpl implements AuthService {
             UserEntity userEntity = userRepository.findById(userId)
                     .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-            String uploadDir = "uploads/user/" + userId + "/";
-            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+//            String uploadDir = "uploads/user/" + userId + "/";
+//            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+//
+//            Path filePath = Paths.get(uploadDir + fileName);
+//
+//            Files.createDirectories(filePath.getParent());
+//            Files.write(filePath, file.getBytes());
+//
+//            userEntity.setImageUrl(uploadDir + fileName);
 
-            Path filePath = Paths.get(uploadDir + fileName);
+            String oldImagePublicId = userEntity.getImagePublicId();
 
-            Files.createDirectories(filePath.getParent());
-            Files.write(filePath, file.getBytes());
+            if (file == null || file.isEmpty()) {
+                throw new GlobalException("Please select an image", HttpStatus.BAD_REQUEST);
+            }
 
-            userEntity.setImageUrl(uploadDir + fileName);
+            if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+                throw new GlobalException("Only image files are allowed", HttpStatus.BAD_REQUEST);
+            }
+
+            Map uploadResult = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap(
+                            "folder", "docmate/users/" + userId,
+                            "resource_type", "image"
+                    )
+            );
+
+            String imageUrl = uploadResult.get("secure_url").toString();
+            String imagePublicId = uploadResult.get("public_id").toString();
+
+            userEntity.setImageUrl(imageUrl);
+            userEntity.setImagePublicId(imagePublicId);
+
             userRepository.save(userEntity);
+
+            if (oldImagePublicId != null && !oldImagePublicId.isBlank()) {
+                cloudinary.uploader().destroy(oldImagePublicId, ObjectUtils.emptyMap());
+            }
+
 
             return GlobalResponseBuilder.buildSuccessResponse("Image uploaded successfully");
         } catch (IOException e) {
