@@ -84,15 +84,23 @@ public class DoctorRecommendationServiceImpl implements DoctorRecommendationServ
 
                     List<DoctorScheduleEntity> slotEntity = availableSlotsMap.get(doctor.getId());
 
-                    List<DoctorScheduleResponse> doctorScheduleResponses = slotEntity.stream()
-                            .map(schedule -> {
+                    List<DoctorScheduleResponse> doctorScheduleResponses = new ArrayList<>();
 
-                                DoctorScheduleResponse doctorScheduleResponse = modelMapper.map(schedule, DoctorScheduleResponse.class);
-                                doctorScheduleResponse.setStartTime(schedule.getStartTime());
-                                doctorScheduleResponse.setEndTime(schedule.getEndTime());
-                                return doctorScheduleResponse;
+                    if (slotEntity != null && !slotEntity.isEmpty()) {
 
-                            }).toList();
+                        doctorScheduleResponses = slotEntity.stream()
+                                .map(schedule -> {
+
+                                    DoctorScheduleResponse doctorScheduleResponse =
+                                            modelMapper.map(schedule, DoctorScheduleResponse.class);
+
+                                    doctorScheduleResponse.setStartTime(schedule.getStartTime());
+                                    doctorScheduleResponse.setEndTime(schedule.getEndTime());
+
+                                    return doctorScheduleResponse;
+
+                                }).toList();
+                    }
 
                     double ratingScore = calculateRatingScore(
                             doctor.getRating(),
