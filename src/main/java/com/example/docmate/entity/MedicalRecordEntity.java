@@ -47,9 +47,6 @@ public class MedicalRecordEntity extends BaseEntity {
     private String diagnosis;
 
 
-    @Column(name="test_report")
-    private String testReport;
-
     @Column(columnDefinition = "TEXT")
     private String notes;
 }

@@ -18,8 +18,10 @@ import java.time.LocalTime;
 public class DoctorScheduleResponse {
     private String id;
     private DayOfWeek availableDay;
+    private boolean available;
     private LocalTime startTime;
     private LocalTime endTime;
     private LocalDate startDate;
     private LocalDate endDate;
+    private String appointmentId;
 }

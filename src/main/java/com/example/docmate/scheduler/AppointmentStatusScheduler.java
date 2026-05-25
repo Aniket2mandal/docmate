@@ -1,7 +1,9 @@
 package com.example.docmate.scheduler;
 import com.example.docmate.entity.AppointmentEntity;
+import com.example.docmate.entity.DoctorScheduleEntity;
 import com.example.docmate.enums.AppointmentStatus;
 import com.example.docmate.repository.AppointmentRepository;
+import com.example.docmate.repository.DoctorScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -16,6 +18,7 @@ import java.util.List;
 public class AppointmentStatusScheduler {
 
     private final AppointmentRepository appointmentRepository;
+    private final DoctorScheduleRepository doctorScheduleRepository;
 
     @Scheduled(fixedRate = 60000)
     public void updateAppointmentStatus() {
@@ -32,5 +35,22 @@ public class AppointmentStatusScheduler {
         }
 
         appointmentRepository.saveAll(appointmentEntityList);
+    }
+
+    @Scheduled(fixedRate = 60000)
+    public void updateScheduleStatus() {
+
+        LocalDate nowDate= LocalDate.now();
+        LocalTime nowTime= LocalTime.now();
+
+        List<DoctorScheduleEntity> scheduleEntityList = doctorScheduleRepository.findPreviousSchedules(
+                nowDate,nowTime, true);
+
+        for (DoctorScheduleEntity scheduleEntity : scheduleEntityList) {
+
+            scheduleEntity.setAvailable(false);
+        }
+
+        doctorScheduleRepository.saveAll(scheduleEntityList);
     }
 }

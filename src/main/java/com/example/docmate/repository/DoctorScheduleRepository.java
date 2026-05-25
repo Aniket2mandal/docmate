@@ -1,7 +1,9 @@
 package com.example.docmate.repository;
 
+import com.example.docmate.entity.AppointmentEntity;
 import com.example.docmate.entity.DoctorEntity;
 import com.example.docmate.entity.DoctorScheduleEntity;
+import com.example.docmate.enums.AppointmentStatus;
 import com.example.docmate.enums.WeekDay;
 import com.example.docmate.payload.request.DoctorScheduleRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -34,5 +36,16 @@ public interface DoctorScheduleRepository extends JpaRepository<DoctorScheduleEn
             LocalDate scheduleDate,
             LocalTime newStartTime,
             LocalTime newEndTime
+    );
+
+    @Query("SELECT ds FROM DoctorScheduleEntity ds " +
+            "WHERE ds.available = :status " +
+            "AND (ds.startDate < :nowDate " +
+            "OR (ds.startDate = :nowDate AND ds.startTime < :nowTime)) " +
+            "ORDER BY ds.startDate DESC, ds.startTime DESC")
+    List<DoctorScheduleEntity> findPreviousSchedules(
+            LocalDate nowDate,
+            LocalTime nowTime,
+            boolean status
     );
 }
