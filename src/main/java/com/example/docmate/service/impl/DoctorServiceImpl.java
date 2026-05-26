@@ -7,6 +7,7 @@ import com.example.docmate.entity.DoctorScheduleEntity;
 import com.example.docmate.entity.RoleEntity;
 import com.example.docmate.entity.UserEntity;
 import com.example.docmate.enums.Role;
+import com.example.docmate.enums.ScheduleAvailabilityStatus;
 import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
@@ -272,7 +273,7 @@ public class DoctorServiceImpl implements DoctorService {
                             .endTime(schedule.getEndTime())
                             .build();
 
-                    if(!schedule.getAvailable()) {
+                    if (schedule.getAvailable() == ScheduleAvailabilityStatus.BOOKED) {
                         AppointmentEntity appointmentEntity = appointmentRepository.findByDoctorScheduleId(schedule.getId())
                                 .orElseThrow(() -> new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
                         if (appointmentEntity != null) {
@@ -287,7 +288,9 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     public GlobalResponse getAvailableSlots(String doctorId) {
-        List<DoctorScheduleEntity> availableSlots = doctorScheduleRepository.findByDoctorIdAndAvailableTrue(doctorId);
+
+        List<DoctorScheduleEntity> availableSlots = doctorScheduleRepository
+                .findByDoctorIdAndAvailable(doctorId,ScheduleAvailabilityStatus.AVAILABLE);
 
 //        Duplicated code
 
@@ -303,7 +306,7 @@ public class DoctorServiceImpl implements DoctorService {
                     doctorScheduleResponse.setStartTime(slot.getStartTime());
                     doctorScheduleResponse.setEndTime(slot.getEndTime());
 
-                    if(!slot.getAvailable()) {
+                    if (slot.getAvailable() == ScheduleAvailabilityStatus.BOOKED) {
                         AppointmentEntity appointmentEntity = appointmentRepository.findByDoctorScheduleId(slot.getId())
                                 .orElseThrow(() -> new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
                         if (appointmentEntity != null) {

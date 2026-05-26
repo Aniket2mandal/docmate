@@ -2,6 +2,7 @@ package com.example.docmate.service.impl;
 
 import com.example.docmate.entity.DoctorEntity;
 import com.example.docmate.entity.DoctorScheduleEntity;
+import com.example.docmate.enums.ScheduleAvailabilityStatus;
 import com.example.docmate.enums.UserStatus;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
@@ -73,7 +74,8 @@ public class DoctorRecommendationServiceImpl implements DoctorRecommendationServ
                 .map(DoctorEntity::getId)
                 .toList();
 
-        List<DoctorScheduleEntity> availableSlots = doctorScheduleRepository.findAvailableSlotsForDoctorsByAvailableTrue(doctorIds);
+        List<DoctorScheduleEntity> availableSlots = doctorScheduleRepository
+                .findAvailableSlotsForDoctorsByAvailable(doctorIds, ScheduleAvailabilityStatus.AVAILABLE);
 
         Map<String, List<DoctorScheduleEntity>> availableSlotsMap = availableSlots.stream()
                 .collect(Collectors.groupingBy(DoctorScheduleEntity::getDoctorId));

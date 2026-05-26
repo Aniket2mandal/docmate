@@ -2,6 +2,7 @@ package com.example.docmate.scheduler;
 import com.example.docmate.entity.AppointmentEntity;
 import com.example.docmate.entity.DoctorScheduleEntity;
 import com.example.docmate.enums.AppointmentStatus;
+import com.example.docmate.enums.ScheduleAvailabilityStatus;
 import com.example.docmate.repository.AppointmentRepository;
 import com.example.docmate.repository.DoctorScheduleRepository;
 import lombok.RequiredArgsConstructor;
@@ -44,11 +45,11 @@ public class AppointmentStatusScheduler {
         LocalTime nowTime= LocalTime.now();
 
         List<DoctorScheduleEntity> scheduleEntityList = doctorScheduleRepository.findPreviousSchedules(
-                nowDate,nowTime, true);
+                nowDate,nowTime, ScheduleAvailabilityStatus.AVAILABLE);
 
         for (DoctorScheduleEntity scheduleEntity : scheduleEntityList) {
 
-            scheduleEntity.setAvailable(false);
+            scheduleEntity.setAvailable(ScheduleAvailabilityStatus.UNAVAILABLE);
         }
 
         doctorScheduleRepository.saveAll(scheduleEntityList);
