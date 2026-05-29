@@ -31,4 +31,9 @@ public class DoctorController {
      return ResponseEntity.ok(doctorService.getAvailableSlots(doctorId));
  }
 
+ @DeleteMapping("/delete-schedule/{scheduleId}")
+    public ResponseEntity<GlobalResponse> deleteSchedule(@PathVariable String scheduleId){
+     return ResponseEntity.ok(doctorService.deleteSchedule(scheduleId));
+ }
+
 }

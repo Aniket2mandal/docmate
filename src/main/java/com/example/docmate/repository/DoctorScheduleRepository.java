@@ -27,7 +27,7 @@ public interface DoctorScheduleRepository extends JpaRepository<DoctorScheduleEn
 
     @Query("SELECT ds FROM DoctorScheduleEntity ds " +
             "WHERE ds.doctorId IN :doctorIds " +
-            "AND ds.available = :available")
+            "AND ds.available = :status")
     List<DoctorScheduleEntity> findAvailableSlotsForDoctorsByAvailable(List<String> doctorIds,ScheduleAvailabilityStatus status);
 
     @Query("SELECT CASE WHEN COUNT(ds) > 0 THEN true ELSE false END " +

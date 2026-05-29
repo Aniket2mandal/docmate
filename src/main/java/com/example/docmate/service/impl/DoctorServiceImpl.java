@@ -273,7 +273,7 @@ public class DoctorServiceImpl implements DoctorService {
                             .endTime(schedule.getEndTime())
                             .build();
 
-                    if (schedule.getAvailable() == ScheduleAvailabilityStatus.BOOKED) {
+                    if (schedule.getAvailable() == ScheduleAvailabilityStatus.BOOKED || schedule.getAvailable() == ScheduleAvailabilityStatus.COMPLETED) {
                         AppointmentEntity appointmentEntity = appointmentRepository.findByDoctorScheduleId(schedule.getId())
                                 .orElseThrow(() -> new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
                         if (appointmentEntity != null) {
@@ -306,7 +306,7 @@ public class DoctorServiceImpl implements DoctorService {
                     doctorScheduleResponse.setStartTime(slot.getStartTime());
                     doctorScheduleResponse.setEndTime(slot.getEndTime());
 
-                    if (slot.getAvailable() == ScheduleAvailabilityStatus.BOOKED) {
+                    if (slot.getAvailable() == ScheduleAvailabilityStatus.BOOKED || slot.getAvailable() == ScheduleAvailabilityStatus.COMPLETED) {
                         AppointmentEntity appointmentEntity = appointmentRepository.findByDoctorScheduleId(slot.getId())
                                 .orElseThrow(() -> new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
                         if (appointmentEntity != null) {
@@ -352,6 +352,19 @@ public class DoctorServiceImpl implements DoctorService {
         doctorResponse.setSchedules(doctorScheduleResponseList);
 
         return GlobalResponseBuilder.buildSuccessResponseWithData("Doctor Details", doctorResponse);
+    }
+
+    @Override
+    public GlobalResponse deleteSchedule(String scheduleId) {
+        DoctorScheduleEntity doctorScheduleEntity = doctorScheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new GlobalException("Doctor Schedule " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        if (doctorScheduleEntity.getAvailable() == ScheduleAvailabilityStatus.BOOKED || doctorScheduleEntity.getAvailable() == ScheduleAvailabilityStatus.COMPLETED) {
+            throw new GlobalException("Cannot delete a booked schedule", HttpStatus.BAD_REQUEST);
+        }
+
+        doctorScheduleRepository.delete(doctorScheduleEntity);
+        return GlobalResponseBuilder.buildSuccessResponse("Doctor Schedule deleted successfully");
     }
 
 }

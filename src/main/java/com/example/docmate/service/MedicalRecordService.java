@@ -7,4 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface MedicalRecordService {
     GlobalResponse createMedicalRecord(MedicalRecordRequest medicalRecordRequest, MultipartFile[] testReports);
+    GlobalResponse getAllMedicalRecords();
+    GlobalResponse getMedicalRecordByAppointmentId(String appointmentId);
+    GlobalResponse getMedicalRecordById(String medicalRecordId);
 }

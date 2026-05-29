@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface TestReportRepository extends JpaRepository<TestReportEntity,String> {
     List<TestReportEntity> findByMedicalRecordId(String medicalRecordId);
+    List<TestReportEntity> findByMedicalRecordIdIn(List<String> medicalRecordIds);
 }

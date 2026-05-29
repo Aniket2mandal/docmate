@@ -8,18 +8,26 @@ import com.example.docmate.entity.MedicalRecordEntity;
 import com.example.docmate.entity.MedicationEntity;
 import com.example.docmate.entity.PatientEntity;
 import com.example.docmate.entity.TestReportEntity;
+import com.example.docmate.entity.UserEntity;
 import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
 import com.example.docmate.payload.request.MedicalRecordRequest;
 import com.example.docmate.payload.request.MedicationRequest;
+import com.example.docmate.payload.response.DoctorResponse;
+import com.example.docmate.payload.response.MedicalRecordResponse;
+import com.example.docmate.payload.response.MedicationResponse;
+import com.example.docmate.payload.response.PatientResponse;
+import com.example.docmate.payload.response.TestReportResponse;
 import com.example.docmate.repository.AppointmentRepository;
 import com.example.docmate.repository.DoctorRepository;
 import com.example.docmate.repository.MedicalRecordRepository;
 import com.example.docmate.repository.MedicationRepository;
 import com.example.docmate.repository.PatientRepository;
 import com.example.docmate.repository.TestReportRepository;
+import com.example.docmate.repository.UserRepository;
 import com.example.docmate.service.MedicalRecordService;
+import com.example.docmate.utils.CommonMethods;
 import com.example.docmate.utils.MyConstants;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +42,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -47,8 +56,11 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
     private final MedicalRecordRepository medicalRecordRepository;
     private final MedicationRepository medicationRepository;
     private final TestReportRepository testReportRepository;
+    private final UserRepository userRepository;
     private final Cloudinary cloudinary;
+    private final CommonMethods commonMethods;
 
+    @Override
     public GlobalResponse createMedicalRecord(MedicalRecordRequest medicalRecordRequest, MultipartFile[] testReports) {
 
         if (medicalRecordRequest.getAppointmentId() == null || medicalRecordRequest.getAppointmentId().isBlank()) {
@@ -163,4 +175,135 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
 
     }
 
+    @Override
+    public GlobalResponse getAllMedicalRecords(){
+        String email = commonMethods.getAuthenticatedUserEmail();
+
+        UserEntity userEntity = userRepository.findByEmail(email)
+                .orElseThrow(() -> new GlobalException(
+                        "User " + MyConstants.ERR_MSG_NOT_FOUND,
+                        HttpStatus.NOT_FOUND
+                ));
+
+        PatientEntity patientEntity = patientRepository.findByUserId(userEntity.getId())
+                .orElseThrow(() -> new GlobalException(
+                        "Patient " + MyConstants.ERR_MSG_NOT_FOUND,
+                        HttpStatus.NOT_FOUND
+                ));
+
+        List<MedicalRecordEntity> medicalRecords =
+                medicalRecordRepository.findByPatientId(patientEntity.getId());
+
+        List<String> medicalRecordIds = medicalRecords.stream()
+                .map(MedicalRecordEntity::getId)
+                .toList();
+
+        Map<String, List<MedicationEntity>> medicationsMap = medicationRepository.findByMedicalRecordIdIn(medicalRecordIds)
+                .stream()
+                .collect(Collectors.groupingBy(medication -> medication.getMedicalRecord().getId()));
+
+        Map<String, List<TestReportEntity>> testReportsMap = testReportRepository.findByMedicalRecordIdIn(medicalRecordIds)
+                .stream()
+                .collect(Collectors.groupingBy(testReport -> testReport.getMedicalRecord().getId()));
+
+        List<MedicalRecordResponse> medicalRecordResponses = medicalRecords.stream()
+                .map(medicalRecord -> {
+
+                    MedicalRecordResponse response = modelMapper.map(medicalRecord, MedicalRecordResponse.class);
+                    response.setMedicalRecordId(medicalRecord.getId());
+
+                    response.setPatient(modelMapper.map(medicalRecord.getPatient(), PatientResponse.class));
+                    response.setDoctor(modelMapper.map(medicalRecord.getDoctor(), DoctorResponse.class));
+
+                    response.setMedications(medicationsMap.getOrDefault(medicalRecord.getId(), new ArrayList<>())
+                            .stream()
+                            .map(medication -> {
+                                MedicationResponse medicationResponse =
+                                        modelMapper.map(medication, MedicationResponse.class);
+                                medicationResponse.setStartDate(medication.getStartDate());
+                                medicationResponse.setEndDate(medication.getEndDate());
+
+                                return medicationResponse;
+                            })
+                            .toList());
+
+                    response.setTestReports(testReportsMap.getOrDefault(medicalRecord.getId(), new ArrayList<>())
+                            .stream()
+                            .map(testReport ->{
+                                TestReportResponse testReportResponse =modelMapper.map(testReport, TestReportResponse.class);
+                                testReportResponse.setTestReportId(testReport.getId());
+
+                                return testReportResponse;
+                            })
+                            .toList());
+
+                    return response;
+                })
+                .toList();
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Medical records retrieved successfully", medicalRecordResponses);
+
+    }
+
+    @Override
+    public GlobalResponse getMedicalRecordByAppointmentId(String appointmentId){
+
+        MedicalRecordEntity medicalRecord = medicalRecordRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(() -> new GlobalException(
+                        "Medical record " + MyConstants.ERR_MSG_NOT_FOUND,
+                        HttpStatus.NOT_FOUND
+                ));
+
+      MedicalRecordResponse response = mapMedicalRecordDetails(medicalRecord);
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Medical record retrieved successfully", response);
+    }
+
+    @Override
+    public GlobalResponse getMedicalRecordById(String medicalRecordId){
+
+        MedicalRecordEntity medicalRecord = medicalRecordRepository.findById(medicalRecordId)
+                .orElseThrow(() -> new GlobalException(
+                        "Medical record " + MyConstants.ERR_MSG_NOT_FOUND,
+                        HttpStatus.NOT_FOUND
+                ));
+
+        MedicalRecordResponse response = mapMedicalRecordDetails(medicalRecord);
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Medical record retrieved successfully", response);
+
+    }
+
+    private MedicalRecordResponse mapMedicalRecordDetails(MedicalRecordEntity medicalRecord) {
+
+        MedicalRecordResponse response = modelMapper.map(medicalRecord, MedicalRecordResponse.class);
+        response.setMedicalRecordId(medicalRecord.getId());
+
+        response.setPatient(modelMapper.map(medicalRecord.getPatient(), PatientResponse.class));
+        response.setDoctor(modelMapper.map(medicalRecord.getDoctor(), DoctorResponse.class));
+
+        List<MedicationEntity> medications = medicationRepository.findByMedicalRecordId(medicalRecord.getId());
+        response.setMedications(medications.stream()
+                .map(medication -> {
+                    MedicationResponse medicationResponse =
+                            modelMapper.map(medication, MedicationResponse.class);
+                    medicationResponse.setStartDate(medication.getStartDate());
+                    medicationResponse.setEndDate(medication.getEndDate());
+
+                    return medicationResponse;
+                })
+                .toList());
+
+        List<TestReportEntity> testReports = testReportRepository.findByMedicalRecordId(medicalRecord.getId());
+        response.setTestReports(testReports.stream()
+                .map(testReport -> {
+                    TestReportResponse testReportResponse = modelMapper.map(testReport, TestReportResponse.class);
+                    testReportResponse.setTestReportId(testReport.getId());
+
+                    return testReportResponse;
+                })
+                .toList());
+
+        return response;
+    }
 }

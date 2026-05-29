@@ -53,5 +53,15 @@ public class AppointmentStatusScheduler {
         }
 
         doctorScheduleRepository.saveAll(scheduleEntityList);
+
+        List<DoctorScheduleEntity> scheduleEntityBookedList = doctorScheduleRepository.findPreviousSchedules(
+                nowDate,nowTime, ScheduleAvailabilityStatus.BOOKED);
+
+        for (DoctorScheduleEntity scheduleEntity : scheduleEntityBookedList) {
+
+            scheduleEntity.setAvailable(ScheduleAvailabilityStatus.COMPLETED);
+        }
+
+        doctorScheduleRepository.saveAll(scheduleEntityBookedList);
     }
 }
