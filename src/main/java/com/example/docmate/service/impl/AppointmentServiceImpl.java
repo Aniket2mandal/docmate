@@ -6,6 +6,7 @@ import com.example.docmate.entity.DoctorScheduleEntity;
 import com.example.docmate.entity.PatientEntity;
 import com.example.docmate.entity.UserEntity;
 import com.example.docmate.enums.AppointmentStatus;
+import com.example.docmate.enums.ScheduleAvailabilityStatus;
 import com.example.docmate.enums.WeekDay;
 import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
@@ -97,10 +98,11 @@ public class AppointmentServiceImpl implements AppointmentService {
 //                .orElseThrow(() -> new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_AVAILABLE, HttpStatus.BAD_REQUEST));
 
         DoctorScheduleEntity doctorScheduleEntity =
-                doctorScheduleRepository.findByDoctorIdAndStartDateAndStartTimeAndAvailableTrue(
+                doctorScheduleRepository.findByDoctorIdAndStartDateAndStartTimeAndAvailable(
                                 doctorEntity.getId(),
                                 appointmentDate,
-                                appointmentTime
+                                appointmentTime,
+                                ScheduleAvailabilityStatus.AVAILABLE
                         )
                         .orElseThrow(() -> new GlobalException(
                                 "Appointment " + MyConstants.ERR_MSG_NOT_AVAILABLE,
@@ -138,7 +140,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointmentRepository.save(appointmentEntity);
 
         if (appointmentEntity.getId() != null) {
-            doctorScheduleEntity.setAvailable(false);
+            doctorScheduleEntity.setAvailable(ScheduleAvailabilityStatus.BOOKED);
             doctorScheduleRepository.save(doctorScheduleEntity);
         }
 

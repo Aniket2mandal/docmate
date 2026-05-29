@@ -9,8 +9,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface AppointmentRepository extends JpaRepository<AppointmentEntity, String> {
+
+
     boolean existsByPatientIdAndDoctorIdAndAppointmentDateAndAppointmentTimeAndStatus(
             String patientId, String doctorId, LocalDate appointmentDate, LocalTime appointmentTime, AppointmentStatus status);
 
@@ -83,6 +86,6 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
             LocalTime nowTime,
             AppointmentStatus status
     );
-
+    Optional<AppointmentEntity> findByDoctorScheduleId(String doctorScheduleId);
 
 }

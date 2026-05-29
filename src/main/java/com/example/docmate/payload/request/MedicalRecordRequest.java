@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -14,12 +16,13 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class MedicalRecordRequest {
-    private Long appointmentId;
-    private Long patientId;
-    private Long doctorId;
+    private String appointmentId;
+//    private Long patientId;
+//    private Long doctorId;
 
     private String diagnosis;
-    private String testReport;
+//    private List<String> testReports;
     private String notes;
+    private List<MedicationRequest> medications;
 
 }

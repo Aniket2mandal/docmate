@@ -1,7 +1,10 @@
 package com.example.docmate.repository;
 
+import com.example.docmate.entity.AppointmentEntity;
 import com.example.docmate.entity.DoctorEntity;
 import com.example.docmate.entity.DoctorScheduleEntity;
+import com.example.docmate.enums.AppointmentStatus;
+import com.example.docmate.enums.ScheduleAvailabilityStatus;
 import com.example.docmate.enums.WeekDay;
 import com.example.docmate.payload.request.DoctorScheduleRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,12 +19,16 @@ import java.util.Optional;
 public interface DoctorScheduleRepository extends JpaRepository<DoctorScheduleEntity, String> {
     List<DoctorScheduleEntity> findByDoctorIdAndStartDateAndAvailableTrue(String doctorId, LocalDate date);
 
-    Optional<DoctorScheduleEntity> findByDoctorIdAndStartDateAndStartTimeAndAvailableTrue(
-            String doctorId, LocalDate date, LocalTime startTime);
+    Optional<DoctorScheduleEntity> findByDoctorIdAndStartDateAndStartTimeAndAvailable(
+            String doctorId, LocalDate date, LocalTime startTime,ScheduleAvailabilityStatus status);
 
    List<DoctorScheduleEntity> findByDoctorId(String doctorId);
-    List<DoctorScheduleEntity> findByDoctorIdAndAvailableTrue(String doctorId);
-    List<DoctorScheduleEntity> findAvailableSlotsForDoctorsByAvailableTrue(List<String> doctorIds);
+    List<DoctorScheduleEntity> findByDoctorIdAndAvailable(String doctorId,ScheduleAvailabilityStatus status);
+
+    @Query("SELECT ds FROM DoctorScheduleEntity ds " +
+            "WHERE ds.doctorId IN :doctorIds " +
+            "AND ds.available = :status")
+    List<DoctorScheduleEntity> findAvailableSlotsForDoctorsByAvailable(List<String> doctorIds,ScheduleAvailabilityStatus status);
 
     @Query("SELECT CASE WHEN COUNT(ds) > 0 THEN true ELSE false END " +
             "FROM DoctorScheduleEntity ds " +
@@ -34,5 +41,16 @@ public interface DoctorScheduleRepository extends JpaRepository<DoctorScheduleEn
             LocalDate scheduleDate,
             LocalTime newStartTime,
             LocalTime newEndTime
+    );
+
+    @Query("SELECT ds FROM DoctorScheduleEntity ds " +
+            "WHERE ds.available = :status " +
+            "AND (ds.startDate < :nowDate " +
+            "OR (ds.startDate = :nowDate AND ds.startTime < :nowTime)) " +
+            "ORDER BY ds.startDate DESC, ds.startTime DESC")
+    List<DoctorScheduleEntity> findPreviousSchedules(
+            LocalDate nowDate,
+            LocalTime nowTime,
+            ScheduleAvailabilityStatus status
     );
 }

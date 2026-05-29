@@ -1,5 +1,6 @@
 package com.example.docmate.entity;
 
+import com.example.docmate.enums.ScheduleAvailabilityStatus;
 import com.example.docmate.enums.WeekDay;
 import jakarta.persistence.*;
 import lombok.*;
@@ -34,9 +35,10 @@ public class DoctorScheduleEntity extends BaseEntity {
     @Column(name = "end_time")
     private LocalTime endTime;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "available")
     @Builder.Default
-    private Boolean available = true;
+    private ScheduleAvailabilityStatus available = ScheduleAvailabilityStatus.AVAILABLE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_id", referencedColumnName = "id")

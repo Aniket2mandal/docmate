@@ -1,11 +1,13 @@
 package com.example.docmate.service.impl;
 
 
+import com.example.docmate.entity.AppointmentEntity;
 import com.example.docmate.entity.DoctorEntity;
 import com.example.docmate.entity.DoctorScheduleEntity;
 import com.example.docmate.entity.RoleEntity;
 import com.example.docmate.entity.UserEntity;
 import com.example.docmate.enums.Role;
+import com.example.docmate.enums.ScheduleAvailabilityStatus;
 import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
@@ -15,6 +17,7 @@ import com.example.docmate.payload.response.DoctorResponse;
 import com.example.docmate.payload.response.DoctorScheduleResponse;
 import com.example.docmate.payload.response.RoleResponse;
 import com.example.docmate.payload.response.UserResponse;
+import com.example.docmate.repository.AppointmentRepository;
 import com.example.docmate.repository.DoctorRepository;
 import com.example.docmate.repository.DoctorScheduleRepository;
 import com.example.docmate.repository.RoleRepository;
@@ -51,6 +54,7 @@ public class DoctorServiceImpl implements DoctorService {
     private final ModelMapper modelMapper;
     private final DoctorScheduleRepository doctorScheduleRepository;
     private final CommonMethods commonMethods;
+    private final AppointmentRepository appointmentRepository;
 
     @Override
     public GlobalResponse createDoctor(DoctorRequest doctor) {
@@ -208,7 +212,7 @@ public class DoctorServiceImpl implements DoctorService {
             LocalTime slotStartTime = scheduleRequest.getStartTime();
             LocalTime slotEndTime = slotStartTime.plusMinutes(30);
 
-            while(slotStartTime.isBefore(scheduleRequest.getEndTime())) {
+            while (slotStartTime.isBefore(scheduleRequest.getEndTime())) {
 
                 if (startDate.isEqual(LocalDate.now())) {
                     if (scheduleRequest.getStartTime().isBefore(LocalTime.now())) {
@@ -257,38 +261,62 @@ public class DoctorServiceImpl implements DoctorService {
     public GlobalResponse getAllSchedule(String doctorId) {
         List<DoctorScheduleEntity> doctorScheduleEntityList = doctorScheduleRepository.findByDoctorId(doctorId);
         List<DoctorScheduleResponse> doctorScheduleResponseList = doctorScheduleEntityList.stream()
-                .map(schedule ->
+                .map(schedule -> {
 //                        modelMapper.map(schedule,DoctorScheduleResponse.class))
-                        DoctorScheduleResponse.builder()
-                                .id(schedule.getId())
-                                .availableDay(schedule.getAvailableDay())
-                                .startDate(schedule.getStartDate())
-                                .endDate(schedule.getEndDate())
-                                .startTime(schedule.getStartTime())
-                                .endTime(schedule.getEndTime())
-                                .build())
+                    DoctorScheduleResponse doctorScheduleResponse = DoctorScheduleResponse.builder()
+                            .id(schedule.getId())
+                            .availableDay(schedule.getAvailableDay())
+                            .available(schedule.getAvailable())
+                            .startDate(schedule.getStartDate())
+                            .endDate(schedule.getEndDate())
+                            .startTime(schedule.getStartTime())
+                            .endTime(schedule.getEndTime())
+                            .build();
+
+                    if (schedule.getAvailable() == ScheduleAvailabilityStatus.BOOKED || schedule.getAvailable() == ScheduleAvailabilityStatus.COMPLETED) {
+                        AppointmentEntity appointmentEntity = appointmentRepository.findByDoctorScheduleId(schedule.getId())
+                                .orElseThrow(() -> new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+                        if (appointmentEntity != null) {
+                            doctorScheduleResponse.setAppointmentId(appointmentEntity.getId());
+                        }
+                    }
+                    return doctorScheduleResponse;
+                })
                 .toList();
         return GlobalResponseBuilder.buildSuccessResponseWithData("Doctor schedule fetched succesfully", doctorScheduleResponseList);
     }
 
     @Override
     public GlobalResponse getAvailableSlots(String doctorId) {
-        List<DoctorScheduleEntity> availableSlots = doctorScheduleRepository.findByDoctorIdAndAvailableTrue(doctorId);
+
+        List<DoctorScheduleEntity> availableSlots = doctorScheduleRepository
+                .findByDoctorIdAndAvailable(doctorId,ScheduleAvailabilityStatus.AVAILABLE);
 
 //        Duplicated code
 
         List<DoctorScheduleResponse> availableSlotResponses = availableSlots.stream()
                 .sorted(
-                Comparator.comparing(DoctorScheduleEntity::getStartDate)
-                        .thenComparing(DoctorScheduleEntity::getStartTime)
+                        Comparator.comparing(DoctorScheduleEntity::getStartDate)
+                                .thenComparing(DoctorScheduleEntity::getStartTime)
                 )
                 .map(slot -> {
-                    DoctorScheduleResponse doctorScheduleResponse= modelMapper.map(slot, DoctorScheduleResponse.class);
+                    DoctorScheduleResponse doctorScheduleResponse = modelMapper.map(slot, DoctorScheduleResponse.class);
                     doctorScheduleResponse.setStartDate(slot.getStartDate());
                     doctorScheduleResponse.setEndDate(slot.getEndDate());
                     doctorScheduleResponse.setStartTime(slot.getStartTime());
                     doctorScheduleResponse.setEndTime(slot.getEndTime());
+
+                    if (slot.getAvailable() == ScheduleAvailabilityStatus.BOOKED || slot.getAvailable() == ScheduleAvailabilityStatus.COMPLETED) {
+                        AppointmentEntity appointmentEntity = appointmentRepository.findByDoctorScheduleId(slot.getId())
+                                .orElseThrow(() -> new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+                        if (appointmentEntity != null) {
+                            doctorScheduleResponse.setAppointmentId(appointmentEntity.getId());
+                        }
+
+                    }
+
                     return doctorScheduleResponse;
+
                 })
                 .toList();
 
@@ -312,7 +340,7 @@ public class DoctorServiceImpl implements DoctorService {
 
         List<DoctorScheduleResponse> doctorScheduleResponseList = doctorScheduleEntity.stream()
                 .map(schedule -> {
-                    DoctorScheduleResponse doctorScheduleResponse=modelMapper.map(schedule, DoctorScheduleResponse.class);
+                    DoctorScheduleResponse doctorScheduleResponse = modelMapper.map(schedule, DoctorScheduleResponse.class);
                     doctorScheduleResponse.setStartDate(schedule.getStartDate());
                     doctorScheduleResponse.setEndDate(schedule.getEndDate());
                     doctorScheduleResponse.setStartTime(schedule.getStartTime());
@@ -324,6 +352,19 @@ public class DoctorServiceImpl implements DoctorService {
         doctorResponse.setSchedules(doctorScheduleResponseList);
 
         return GlobalResponseBuilder.buildSuccessResponseWithData("Doctor Details", doctorResponse);
+    }
+
+    @Override
+    public GlobalResponse deleteSchedule(String scheduleId) {
+        DoctorScheduleEntity doctorScheduleEntity = doctorScheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new GlobalException("Doctor Schedule " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        if (doctorScheduleEntity.getAvailable() == ScheduleAvailabilityStatus.BOOKED || doctorScheduleEntity.getAvailable() == ScheduleAvailabilityStatus.COMPLETED) {
+            throw new GlobalException("Cannot delete a booked schedule", HttpStatus.BAD_REQUEST);
+        }
+
+        doctorScheduleRepository.delete(doctorScheduleEntity);
+        return GlobalResponseBuilder.buildSuccessResponse("Doctor Schedule deleted successfully");
     }
 
 }
