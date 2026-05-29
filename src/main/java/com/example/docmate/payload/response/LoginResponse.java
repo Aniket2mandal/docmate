@@ -18,6 +18,7 @@ public class LoginResponse {
 
     private String userId;
     private String email;
+    private String name;
     private Role role;
     private String patientId;
     private String doctorId;
