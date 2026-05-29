@@ -201,6 +201,7 @@ public class AuthServiceImpl implements AuthService {
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
                     .userId(userEntity.getId())
+                    .name(userEntity.getFirstName() + " " + userEntity.getLastName())
                     .patientId(patientId)
                     .doctorId(doctorId)
                     .email(userEntity.getEmail())
