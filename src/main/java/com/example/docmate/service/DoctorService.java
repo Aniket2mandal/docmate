@@ -24,4 +24,6 @@ public interface DoctorService {
     GlobalResponse getDoctorDetails(String doctorId);
 
     GlobalResponse deleteSchedule(String doctorId);
+
+    GlobalResponse deleteDoctor(String doctorId);
 }

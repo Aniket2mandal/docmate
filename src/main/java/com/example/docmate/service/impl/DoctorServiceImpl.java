@@ -367,4 +367,27 @@ public class DoctorServiceImpl implements DoctorService {
         return GlobalResponseBuilder.buildSuccessResponse("Doctor Schedule deleted successfully");
     }
 
+    @Override
+    public GlobalResponse deleteDoctor(String doctorId) {
+
+        DoctorEntity doctorEntity = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        List<DoctorScheduleEntity> doctorScheduleEntities = doctorScheduleRepository.findByDoctorId(doctorId);
+
+        for (DoctorScheduleEntity schedule : doctorScheduleEntities) {
+            if (schedule.getAvailable() == ScheduleAvailabilityStatus.BOOKED) {
+                throw new GlobalException("Cannot delete a doctor with booked schedules", HttpStatus.BAD_REQUEST);
+            }
+        }
+
+        // Delete all schedules associated with the doctor
+        doctorScheduleRepository.deleteAll(doctorScheduleEntities);
+
+        // Delete the doctor
+        doctorRepository.delete(doctorEntity);
+
+        return GlobalResponseBuilder.buildSuccessResponse("Doctor deleted successfully");
+    }
+
 }

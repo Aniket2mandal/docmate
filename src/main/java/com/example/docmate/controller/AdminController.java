@@ -12,6 +12,7 @@ import com.example.docmate.payload.request.UserRequest;
 import com.example.docmate.service.AdminService;
 import com.example.docmate.service.DoctorService;
 import com.example.docmate.service.PatientService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -39,7 +40,7 @@ public class AdminController {
     }
 
     @PostMapping("/create-doctor")
-    public ResponseEntity<GlobalResponse> createDoctor(@RequestBody DoctorRequest doctor) {
+    public ResponseEntity<GlobalResponse> createDoctor(@Valid @RequestBody DoctorRequest doctor) {
         return ResponseEntity.ok(doctorService.createDoctor(doctor));
     }
 
@@ -56,7 +57,7 @@ public class AdminController {
     }
 
 
-    //not needed already in public controller
+    //not needed /get-doctor/{id} already in public controller
     @GetMapping("/get-doctor/{id}")
     public ResponseEntity<GlobalResponse> getDoctorById(@PathVariable String id) {
         return ResponseEntity.ok(doctorService.getDoctorById(id));
@@ -72,8 +73,19 @@ public class AdminController {
         return ResponseEntity.ok(doctorService.updateDoctor(doctorRequest, doctorId));
     }
 
+    @DeleteMapping("/delete-doctor/{doctorId}")
+        public ResponseEntity<GlobalResponse> deleteDoctor(@PathVariable String doctorId) {
+            return ResponseEntity.ok(doctorService.deleteDoctor(doctorId));
+        }
+
     @GetMapping("/get-all-patient")
     public ResponseEntity<GlobalResponse> getAllPatient() {
         return ResponseEntity.ok(patientService.getAllPatient());
     }
+
+    @DeleteMapping("/delete-patient/{patientId}")
+    public ResponseEntity<GlobalResponse> deletePatient(@PathVariable String patientId) {
+        return ResponseEntity.ok(patientService.deletePatient(patientId));
+    }
+
 }
