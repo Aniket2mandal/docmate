@@ -9,6 +9,7 @@ import com.example.docmate.entity.MedicationEntity;
 import com.example.docmate.entity.PatientEntity;
 import com.example.docmate.entity.TestReportEntity;
 import com.example.docmate.entity.UserEntity;
+import com.example.docmate.enums.UserStatus;
 import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
@@ -179,7 +180,7 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
     public GlobalResponse getAllMedicalRecords(){
         String email = commonMethods.getAuthenticatedUserEmail();
 
-        UserEntity userEntity = userRepository.findByEmail(email)
+        UserEntity userEntity = userRepository.findByEmailAndStatus(email, UserStatus.ACTIVE)
                 .orElseThrow(() -> new GlobalException(
                         "User " + MyConstants.ERR_MSG_NOT_FOUND,
                         HttpStatus.NOT_FOUND

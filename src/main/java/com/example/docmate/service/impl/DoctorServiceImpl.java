@@ -8,6 +8,7 @@ import com.example.docmate.entity.RoleEntity;
 import com.example.docmate.entity.UserEntity;
 import com.example.docmate.enums.Role;
 import com.example.docmate.enums.ScheduleAvailabilityStatus;
+import com.example.docmate.enums.UserStatus;
 import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
@@ -169,7 +170,7 @@ public class DoctorServiceImpl implements DoctorService {
 
         String email = commonMethods.getAuthenticatedUserEmail();
 
-        UserEntity userEntity = userRepository.findByEmail(email)
+        UserEntity userEntity = userRepository.findByEmailAndStatus(email, UserStatus.ACTIVE)
                 .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         if (userEntity.getRole() == null || userEntity.getRole().getName() != Role.DOCTOR) {

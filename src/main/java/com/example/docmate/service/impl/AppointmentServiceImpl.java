@@ -7,6 +7,7 @@ import com.example.docmate.entity.PatientEntity;
 import com.example.docmate.entity.UserEntity;
 import com.example.docmate.enums.AppointmentStatus;
 import com.example.docmate.enums.ScheduleAvailabilityStatus;
+import com.example.docmate.enums.UserStatus;
 import com.example.docmate.enums.WeekDay;
 import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
@@ -50,7 +51,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         String email = commonMethods.getAuthenticatedUserEmail();
 
-        UserEntity userEntity = userRepository.findByEmail(email)
+        UserEntity userEntity = userRepository.findByEmailAndStatus(email, UserStatus.ACTIVE)
                 .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
 

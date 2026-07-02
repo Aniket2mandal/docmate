@@ -8,6 +8,7 @@ import com.example.docmate.entity.RefreshTokenEntity;
 import com.example.docmate.entity.RoleEntity;
 import com.example.docmate.entity.UserEntity;
 import com.example.docmate.enums.Role;
+import com.example.docmate.enums.UserStatus;
 import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
@@ -163,7 +164,7 @@ public class AuthServiceImpl implements AuthService {
 //            Authentication authentication = authenticationManager
 //                    .authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
-            UserEntity userEntity = userRepository.findByEmail(loginRequest.getUsername())
+            UserEntity userEntity = userRepository.findByEmailAndStatus(loginRequest.getUsername(), UserStatus.ACTIVE)
                     .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
             if (!passwordEncoder.matches(loginRequest.getPassword(), userEntity.getPassword())) {
@@ -278,7 +279,7 @@ public class AuthServiceImpl implements AuthService {
         Role role = authentication.getAuthorities().stream().findFirst().get().getAuthority().equals("ROLE_ADMIN") ? Role.ADMIN :
                 authentication.getAuthorities().stream().findFirst().get().getAuthority().equals("ROLE_DOCTOR") ? Role.DOCTOR : Role.PATIENT;
 
-        UserEntity userEntity = userRepository.findByEmail(email)
+        UserEntity userEntity = userRepository.findByEmailAndStatus(email, UserStatus.ACTIVE)
                 .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         UserResponse userResponse = modelMapper.map(userEntity, UserResponse.class);
@@ -312,7 +313,7 @@ public class AuthServiceImpl implements AuthService {
 
     public GlobalResponse logoutUser(String userEmail) {
 
-        UserEntity user = userRepository.findByEmail(userEmail)
+        UserEntity user = userRepository.findByEmailAndStatus(userEmail, UserStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         refreshTokenRepository.deleteByUserId(user.getId());
