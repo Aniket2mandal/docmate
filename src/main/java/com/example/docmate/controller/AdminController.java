@@ -58,10 +58,10 @@ public class AdminController {
 
 
     //not needed /get-doctor/{id} already in public controller
-    @GetMapping("/get-doctor/{id}")
-    public ResponseEntity<GlobalResponse> getDoctorById(@PathVariable String id) {
-        return ResponseEntity.ok(doctorService.getDoctorById(id));
-    }
+//    @GetMapping("/get-doctor/{id}")
+//    public ResponseEntity<GlobalResponse> getDoctorById(@PathVariable String id) {
+//        return ResponseEntity.ok(doctorService.getDoctorById(id));
+//    }
 
     @PutMapping("/change-status/{userId}")
     public ResponseEntity<GlobalResponse> changeStatus(@RequestBody UserRequest user, @PathVariable String userId) {
