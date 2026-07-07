@@ -99,7 +99,7 @@ public class DoctorServiceImpl implements DoctorService {
     public GlobalResponse getAllDoctor(Pageable pageable) {
 //        Pageable pageable = PageRequest.of(page, size);
 
-        Page<DoctorEntity> doctorEntityList = doctorRepository.findAll(pageable);
+        Page<DoctorEntity> doctorEntityList = doctorRepository.findAllDoctors(UserStatus.ACTIVE ,pageable);
 
         List<DoctorResponse> doctorResponseList = doctorEntityList.getContent().stream()
                 .map(doctor -> {

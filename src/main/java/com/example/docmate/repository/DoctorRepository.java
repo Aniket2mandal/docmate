@@ -2,6 +2,8 @@ package com.example.docmate.repository;
 
 import com.example.docmate.entity.DoctorEntity;
 import com.example.docmate.enums.UserStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -20,4 +22,10 @@ public interface DoctorRepository extends JpaRepository<DoctorEntity, String> {
             List<String> specializations,
             UserStatus status
     );
+
+    @Query("SELECT d " +
+            "FROM DoctorEntity d " +
+            "JOIN FETCH d.user u " +
+            "WHERE u.status = :status")
+    Page<DoctorEntity> findAllDoctors(UserStatus status, Pageable pageable);
 }
