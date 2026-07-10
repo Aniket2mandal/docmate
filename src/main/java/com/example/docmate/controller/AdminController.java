@@ -30,7 +30,7 @@ public class AdminController {
     private final PatientService patientService;
 
     @PostMapping("/create-role")
-    public ResponseEntity<GlobalResponse> createRole(@RequestBody RoleRequest role) {
+    public ResponseEntity<GlobalResponse> createRole(@Valid @RequestBody RoleRequest role) {
         return ResponseEntity.ok(adminService.createRole(role));
     }
 

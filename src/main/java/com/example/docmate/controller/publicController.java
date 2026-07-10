@@ -37,4 +37,6 @@ public class publicController {
     public ResponseEntity<GlobalResponse> getDoctorDetails(@PathVariable String doctorId) {
         return ResponseEntity.ok(doctorService.getDoctorDetails(doctorId));
     }
+
+    //api for search doctor by province and specialization
 }
