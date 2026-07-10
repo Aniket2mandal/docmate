@@ -8,6 +8,7 @@ import com.example.docmate.payload.response.LoginResponse;
 import com.example.docmate.service.AuthService;
 import com.example.docmate.service.RefreshTokenService;
 import com.example.docmate.utils.CommonMethods;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +39,7 @@ public class AuthController {
      }
 
      @PostMapping("/register-patient")
-    public ResponseEntity<GlobalResponse> registerPatient(@RequestBody PatientRequest patient) {
+    public ResponseEntity<GlobalResponse> registerPatient(@Valid @RequestBody PatientRequest patient) {
         return ResponseEntity.ok(authService.registerPatient(patient));
      }
 
