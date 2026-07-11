@@ -122,45 +122,22 @@ public class DoctorServiceImpl implements DoctorService {
             throw new GlobalException("Higher education certificate is required.", HttpStatus.BAD_REQUEST);
         }
 
-
-        String citizenshipFrontPath= commonMethods
-                .buildPath("doctor-document",doctorEntity.getId(), "CitizenshipFront");
-
-        CloudinaryUploadResponse citizenshipFrontUrl =
-                commonMethods.uploadDoctorDocument(citizenshipFront, citizenshipFrontPath, null);
-
-        String citizenshipBackPath= commonMethods
-                .buildPath("doctor-document",doctorEntity.getId(), "CitizenshipBack");
-
-        CloudinaryUploadResponse citizenshipBackUrl =
-                commonMethods.uploadDoctorDocument(citizenshipBack, citizenshipBackPath, null);
-
-        String doctorLicensePath= commonMethods
-                .buildPath("doctor-document",doctorEntity.getId(), "DoctorLicense");
-
-        CloudinaryUploadResponse doctorLicenseUrl =
-                commonMethods.uploadDoctorDocument(license, doctorLicensePath, null);
-
-        String educationCertificatePath= commonMethods
-                .buildPath("doctor-document",doctorEntity.getId(), "EducationCertificate");
-
-        CloudinaryUploadResponse educationCertificateUrl =
-                commonMethods.uploadDoctorDocument(educationCertificate, educationCertificatePath, null);
+        handleDocumentUpload(doctorEntity, citizenshipFront, citizenshipBack, license, educationCertificate);
 
 
-        DoctorDocumentsEntity documentsEntity = DoctorDocumentsEntity.builder()
-                .doctor(doctorEntity)
-                .citizenshipFront(citizenshipFrontUrl.getUrl())
-                .citizenshipFrontPublicId(citizenshipFrontUrl.getPublicId())
-                .citizenshipBack(citizenshipBackUrl.getUrl())
-                .citizenshipBackPublicId(citizenshipBackUrl.getPublicId())
-                .doctorLicense(doctorLicenseUrl.getUrl())
-                .doctorLicensePublicId(doctorLicenseUrl.getPublicId())
-                .educationCertificate(educationCertificateUrl.getUrl())
-                .educationCertificatePublicId(educationCertificateUrl.getPublicId())
-                .build();
+//        DoctorDocumentsEntity documentsEntity = DoctorDocumentsEntity.builder()
+//                .doctor(doctorEntity)
+//                .citizenshipFront(citizenshipFrontUrl.getUrl())
+//                .citizenshipFrontPublicId(citizenshipFrontUrl.getPublicId())
+//                .citizenshipBack(citizenshipBackUrl.getUrl())
+//                .citizenshipBackPublicId(citizenshipBackUrl.getPublicId())
+//                .doctorLicense(doctorLicenseUrl.getUrl())
+//                .doctorLicensePublicId(doctorLicenseUrl.getPublicId())
+//                .educationCertificate(educationCertificateUrl.getUrl())
+//                .educationCertificatePublicId(educationCertificateUrl.getPublicId())
+//                .build();
 
-        doctorDocumentsRepository.save(documentsEntity);
+//        doctorDocumentsRepository.save(documentsEntity);
 
 
         return GlobalResponseBuilder.buildSuccessResponse("Doctor created successfully");
@@ -234,57 +211,59 @@ public class DoctorServiceImpl implements DoctorService {
         modelMapper.map(doctorRequest, doctorEntity);
         doctorRepository.save(doctorEntity);
 
-        DoctorDocumentsEntity documentsEntity = doctorDocumentsRepository.findByDoctorId(doctorId);
+        handleDocumentUpload(doctorEntity, citizenshipFront, citizenshipBack, license, educationCertificate);
 
-        if (citizenshipFront != null) {
-
-            String citizenshipFrontPath= commonMethods
-                    .buildPath("doctor-document",doctorEntity.getId(), "CitizenshipFront");
-
-            CloudinaryUploadResponse citizenshipFrontUrl =
-                    commonMethods.uploadDoctorDocument(citizenshipFront, citizenshipFrontPath, documentsEntity.getCitizenshipFrontPublicId());
-
-            documentsEntity.setCitizenshipFront(citizenshipFrontUrl.getUrl());
-            documentsEntity.setCitizenshipFrontPublicId(citizenshipFrontUrl.getPublicId());
-        }
-
-        if (citizenshipBack != null) {
-
-            String citizenshipBackPath= commonMethods
-                    .buildPath("doctor-document",doctorEntity.getId(), "CitizenshipBack");
-
-            CloudinaryUploadResponse citizenshipBackUrl =
-                    commonMethods.uploadDoctorDocument(citizenshipBack, citizenshipBackPath, documentsEntity.getCitizenshipBackPublicId());
-
-            documentsEntity.setCitizenshipBack(citizenshipBackUrl.getUrl());
-            documentsEntity.setCitizenshipBackPublicId(citizenshipBackUrl.getPublicId());
-        }
-
-        if (license != null) {
-
-            String doctorLicensePath= commonMethods
-                    .buildPath("doctor-document",doctorEntity.getId(), "DoctorLicense");
-
-            CloudinaryUploadResponse doctorLicenseUrl =
-                    commonMethods.uploadDoctorDocument(license, doctorLicensePath, documentsEntity.getDoctorLicensePublicId());
-
-            documentsEntity.setDoctorLicense(doctorLicenseUrl.getUrl());
-            documentsEntity.setDoctorLicensePublicId(doctorLicenseUrl.getPublicId());
-        }
-
-        if (educationCertificate != null) {
-
-            String educationCertificatePath= commonMethods
-                    .buildPath("doctor-document",doctorEntity.getId(), "EducationCertificate");
-
-            CloudinaryUploadResponse educationCertificateUrl =
-                    commonMethods.uploadDoctorDocument(educationCertificate, educationCertificatePath, documentsEntity.getEducationCertificatePublicId());
-
-            documentsEntity.setEducationCertificate(educationCertificateUrl.getUrl());
-            documentsEntity.setEducationCertificatePublicId(educationCertificateUrl.getPublicId());
-        }
-
-        doctorDocumentsRepository.save(documentsEntity);
+//        DoctorDocumentsEntity documentsEntity = doctorDocumentsRepository.findByDoctorId(doctorId);
+//
+//        if (citizenshipFront != null) {
+//
+//            String citizenshipFrontPath= commonMethods
+//                    .buildPath("doctor-document",doctorEntity.getId(), "CitizenshipFront");
+//
+//            CloudinaryUploadResponse citizenshipFrontUrl =
+//                    commonMethods.uploadDoctorDocument(citizenshipFront, citizenshipFrontPath, documentsEntity.getCitizenshipFrontPublicId());
+//
+//            documentsEntity.setCitizenshipFront(citizenshipFrontUrl.getUrl());
+//            documentsEntity.setCitizenshipFrontPublicId(citizenshipFrontUrl.getPublicId());
+//        }
+//
+//        if (citizenshipBack != null) {
+//
+//            String citizenshipBackPath= commonMethods
+//                    .buildPath("doctor-document",doctorEntity.getId(), "CitizenshipBack");
+//
+//            CloudinaryUploadResponse citizenshipBackUrl =
+//                    commonMethods.uploadDoctorDocument(citizenshipBack, citizenshipBackPath, documentsEntity.getCitizenshipBackPublicId());
+//
+//            documentsEntity.setCitizenshipBack(citizenshipBackUrl.getUrl());
+//            documentsEntity.setCitizenshipBackPublicId(citizenshipBackUrl.getPublicId());
+//        }
+//
+//        if (license != null) {
+//
+//            String doctorLicensePath= commonMethods
+//                    .buildPath("doctor-document",doctorEntity.getId(), "DoctorLicense");
+//
+//            CloudinaryUploadResponse doctorLicenseUrl =
+//                    commonMethods.uploadDoctorDocument(license, doctorLicensePath, documentsEntity.getDoctorLicensePublicId());
+//
+//            documentsEntity.setDoctorLicense(doctorLicenseUrl.getUrl());
+//            documentsEntity.setDoctorLicensePublicId(doctorLicenseUrl.getPublicId());
+//        }
+//
+//        if (educationCertificate != null) {
+//
+//            String educationCertificatePath= commonMethods
+//                    .buildPath("doctor-document",doctorEntity.getId(), "EducationCertificate");
+//
+//            CloudinaryUploadResponse educationCertificateUrl =
+//                    commonMethods.uploadDoctorDocument(educationCertificate, educationCertificatePath, documentsEntity.getEducationCertificatePublicId());
+//
+//            documentsEntity.setEducationCertificate(educationCertificateUrl.getUrl());
+//            documentsEntity.setEducationCertificatePublicId(educationCertificateUrl.getPublicId());
+//        }
+//
+//        doctorDocumentsRepository.save(documentsEntity);
 
         return GlobalResponseBuilder.buildSuccessResponse("Doctor updated successfully");
     }
@@ -575,6 +554,106 @@ public class DoctorServiceImpl implements DoctorService {
         }
         return doctorResponse;
 
+    }
+
+    public void handleDocumentUpload(DoctorEntity doctorEntity,
+                                       MultipartFile citizenshipFront,
+                                        MultipartFile citizenshipBack,
+                                        MultipartFile license,
+                                        MultipartFile educationCertificate) {
+
+        DoctorDocumentsEntity documentsEntity = doctorDocumentsRepository.findByDoctorId(doctorEntity.getId());
+
+        String citizenshipFrontPath= commonMethods
+                .buildPath("doctor-document",doctorEntity.getId(), "CitizenshipFront");
+
+        String citizenshipBackPath= commonMethods
+                .buildPath("doctor-document",doctorEntity.getId(), "CitizenshipBack");
+
+        String doctorLicensePath= commonMethods
+                .buildPath("doctor-document",doctorEntity.getId(), "DoctorLicense");
+
+        String educationCertificatePath= commonMethods
+                .buildPath("doctor-document",doctorEntity.getId(), "EducationCertificate");
+
+        if(documentsEntity==null) {
+
+            documentsEntity=new DoctorDocumentsEntity();
+            documentsEntity.setDoctor(doctorEntity);
+
+            if (citizenshipFront != null) {
+                CloudinaryUploadResponse citizenshipFrontUrl =
+                        commonMethods.uploadDoctorDocument(citizenshipFront, citizenshipFrontPath, null);
+
+                documentsEntity.setCitizenshipFront(citizenshipFrontUrl.getUrl());
+                documentsEntity.setCitizenshipFrontPublicId(citizenshipFrontUrl.getPublicId());
+            }
+
+            if (citizenshipBack != null) {
+
+                CloudinaryUploadResponse citizenshipBackUrl =
+                        commonMethods.uploadDoctorDocument(citizenshipBack, citizenshipBackPath, null);
+
+                documentsEntity.setCitizenshipBack(citizenshipBackUrl.getUrl());
+                documentsEntity.setCitizenshipBackPublicId(citizenshipBackUrl.getPublicId());
+            }
+
+            if (license != null) {
+
+                CloudinaryUploadResponse doctorLicenseUrl =
+                        commonMethods.uploadDoctorDocument(license, doctorLicensePath, null);
+
+                documentsEntity.setDoctorLicense(doctorLicenseUrl.getUrl());
+                documentsEntity.setDoctorLicensePublicId(doctorLicenseUrl.getPublicId());
+            }
+
+            if (educationCertificate != null) {
+                CloudinaryUploadResponse educationCertificateUrl =
+                        commonMethods.uploadDoctorDocument(educationCertificate, educationCertificatePath, null);
+
+                documentsEntity.setEducationCertificate(educationCertificateUrl.getUrl());
+                documentsEntity.setEducationCertificatePublicId(educationCertificateUrl.getPublicId());
+            }
+        }
+
+        else {
+            if (citizenshipFront != null) {
+
+                CloudinaryUploadResponse citizenshipFrontUrl =
+                        commonMethods.uploadDoctorDocument(citizenshipFront, citizenshipFrontPath, documentsEntity.getCitizenshipFrontPublicId());
+
+                documentsEntity.setCitizenshipFront(citizenshipFrontUrl.getUrl());
+                documentsEntity.setCitizenshipFrontPublicId(citizenshipFrontUrl.getPublicId());
+            }
+
+            if (citizenshipBack != null) {
+
+                CloudinaryUploadResponse citizenshipBackUrl =
+                        commonMethods.uploadDoctorDocument(citizenshipBack, citizenshipBackPath, documentsEntity.getCitizenshipBackPublicId());
+
+                documentsEntity.setCitizenshipBack(citizenshipBackUrl.getUrl());
+                documentsEntity.setCitizenshipBackPublicId(citizenshipBackUrl.getPublicId());
+            }
+
+            if (license != null) {
+
+                CloudinaryUploadResponse doctorLicenseUrl =
+                        commonMethods.uploadDoctorDocument(license, doctorLicensePath, documentsEntity.getDoctorLicensePublicId());
+
+                documentsEntity.setDoctorLicense(doctorLicenseUrl.getUrl());
+                documentsEntity.setDoctorLicensePublicId(doctorLicenseUrl.getPublicId());
+            }
+
+            if (educationCertificate != null) {
+                CloudinaryUploadResponse educationCertificateUrl =
+                        commonMethods.uploadDoctorDocument(educationCertificate, educationCertificatePath, documentsEntity.getEducationCertificatePublicId());
+
+                documentsEntity.setEducationCertificate(educationCertificateUrl.getUrl());
+                documentsEntity.setEducationCertificatePublicId(educationCertificateUrl.getPublicId());
+            }
+        }
+
+        doctorDocumentsRepository.save(documentsEntity);
     }
 
 
