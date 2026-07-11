@@ -139,9 +139,7 @@ public class CommonMethods {
             String newUrl = uploadResult.get("secure_url").toString();
             String newPublicId = uploadResult.get("public_id").toString();
 
-            if (oldPublicId != null && !oldPublicId.isBlank()) {
-                cloudinary.uploader().destroy(oldPublicId, ObjectUtils.emptyMap());
-            }
+            deleteFiles(oldPublicId);
 
             return CloudinaryUploadResponse.builder()
                     .url(newUrl)
@@ -156,10 +154,24 @@ public class CommonMethods {
         }
     }
 
-    public void deleteSubFolder(String id){
+    public void deleteFiles(String oldPublicId){
+
+        try {
+            if (oldPublicId != null && !oldPublicId.isBlank()) {
+                cloudinary.uploader().destroy(oldPublicId, ObjectUtils.emptyMap());
+            }
+        }catch (Exception e) {
+            throw new GlobalException(
+                    "Failed to move document",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    public void deleteSubFolder(String subFolderName,String id){
         try {
             cloudinary.api().deleteFolder(
-                    "docmate/doctor-document-request/" +id,
+                    "docmate/"+subFolderName+"/" +id,
                     ObjectUtils.emptyMap()
             );
         } catch (Exception e) {

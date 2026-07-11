@@ -94,6 +94,10 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new GlobalException("Request " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         DoctorRequestResponse doctorRequestResponse = modelMapper.map(doctorRequestEntity, DoctorRequestResponse.class);
+        doctorRequestResponse.setCitizenshipFrontUrl(doctorRequestEntity.getCitizenshipFront());
+        doctorRequestResponse.setCitizenshipBackUrl(doctorRequestEntity.getCitizenshipBack());
+        doctorRequestResponse.setDoctorLicenseUrl(doctorRequestEntity.getDoctorLicense());
+        doctorRequestResponse.setEducationCertificateUrl(doctorRequestEntity.getEducationCertificate());
 
         return GlobalResponseBuilder.buildSuccessResponseWithData(" Doctor request fetched",doctorRequestResponse);
     }
@@ -196,8 +200,31 @@ public class AdminServiceImpl implements AdminService {
         doctorRequestEntity.setReviewedBy(reviewerEmail);
         doctorRequestRepository.save(doctorRequestEntity);
 
-        commonMethods.deleteSubFolder(doctorRequestEntity.getId());
+        commonMethods.deleteSubFolder("doctor-document-request",doctorRequestEntity.getId());
 
         return GlobalResponseBuilder.buildSuccessResponse("Doctor approved successfully");
+    }
+
+    public GlobalResponse rejectDoctorRequest(String doctorRequestId,String reason){
+
+        DoctorRequestEntity doctorRequestEntity =doctorRequestRepository.findById(doctorRequestId)
+                .orElseThrow(() -> new GlobalException("Request " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+        doctorRequestEntity.setRequestStatus(DoctorRequestStatus.REJECTED);
+
+        String reviewerEmail=commonMethods.getAuthenticatedUserEmail();
+
+        doctorRequestEntity.setReviewedBy(reviewerEmail);
+        doctorRequestEntity.setRejectionReason(reason);
+
+        doctorRequestRepository.save(doctorRequestEntity);
+
+        commonMethods.deleteFiles(doctorRequestEntity.getCitizenshipFrontPublicId());
+        commonMethods.deleteFiles(doctorRequestEntity.getCitizenshipBackPublicId());
+        commonMethods.deleteFiles(doctorRequestEntity.getDoctorLicensePublicId());
+        commonMethods.deleteFiles(doctorRequestEntity.getEducationCertificatePublicId());
+
+        commonMethods.deleteSubFolder("doctor-document-request",doctorRequestEntity.getId());
+
+        return  GlobalResponseBuilder.buildSuccessResponse("Doctor request rejected !");
     }
 }

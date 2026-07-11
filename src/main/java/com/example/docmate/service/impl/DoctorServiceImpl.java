@@ -426,8 +426,19 @@ public class DoctorServiceImpl implements DoctorService {
         // Delete all schedules associated with the doctor
         doctorScheduleRepository.deleteAll(doctorScheduleEntities);
 
+        DoctorDocumentsEntity doctorDocumentsEntity = doctorDocumentsRepository.findByDoctorId(doctorId);
+
+        doctorDocumentsRepository.delete(doctorDocumentsEntity);
+
         // Delete the doctor
         doctorRepository.delete(doctorEntity);
+
+        commonMethods.deleteFiles(doctorDocumentsEntity.getCitizenshipFrontPublicId());
+        commonMethods.deleteFiles(doctorDocumentsEntity.getCitizenshipBackPublicId());
+        commonMethods.deleteFiles(doctorDocumentsEntity.getDoctorLicensePublicId());
+        commonMethods.deleteFiles(doctorDocumentsEntity.getEducationCertificatePublicId());
+
+        commonMethods.deleteSubFolder("doctor-document",doctorEntity.getId());
 
         return GlobalResponseBuilder.buildSuccessResponse("Doctor deleted successfully");
     }

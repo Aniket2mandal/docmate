@@ -132,4 +132,9 @@ public class AdminController {
         return ResponseEntity.ok(adminService.approveDoctorRequest(doctorRequestId));
     }
 
+    @PutMapping("/reject-doctor-request/{doctorRequestId}")
+    public ResponseEntity<GlobalResponse> rejectDoctorRequest(@PathVariable String doctorRequestId,@RequestBody String reason){
+        return ResponseEntity.ok(adminService.rejectDoctorRequest(doctorRequestId,reason));
+    }
+
 }

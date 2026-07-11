@@ -16,7 +16,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DoctorRequestResponse {
-    private String requestId;
+    private String id;
 
     // User Information
     private String firstName;
