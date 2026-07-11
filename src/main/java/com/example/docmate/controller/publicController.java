@@ -57,8 +57,8 @@ public class publicController {
 
 
     @PostMapping(value = "/apply-for-doctor", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<GlobalResponse> createDoctor(@Valid
-                                                       @RequestPart("doctorRequest") DoctorRequest doctor,
+    public ResponseEntity<GlobalResponse> ApplyForDoctor(@Valid
+                                                       @RequestPart("doctorRequest") DoctorRequest doctorRequest,
 
                                                        @RequestPart("citizenshipFront") MultipartFile citizenshipFront,
 
@@ -68,7 +68,7 @@ public class publicController {
 
                                                        @RequestPart("educationCertificate") MultipartFile educationCertificate
     ) {
-        return ResponseEntity.ok(doctorService.ApplyForDoctor(doctor,
+        return ResponseEntity.ok(doctorService.ApplyForDoctor(doctorRequest,
                 citizenshipFront, citizenshipBack, doctorLicense, educationCertificate));
     }
 }

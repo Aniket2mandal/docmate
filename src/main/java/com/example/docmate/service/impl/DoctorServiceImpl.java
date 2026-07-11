@@ -4,9 +4,11 @@ package com.example.docmate.service.impl;
 import com.example.docmate.entity.AppointmentEntity;
 import com.example.docmate.entity.DoctorDocumentsEntity;
 import com.example.docmate.entity.DoctorEntity;
+import com.example.docmate.entity.DoctorRequestEntity;
 import com.example.docmate.entity.DoctorScheduleEntity;
 import com.example.docmate.entity.RoleEntity;
 import com.example.docmate.entity.UserEntity;
+import com.example.docmate.enums.DoctorRequestStatus;
 import com.example.docmate.enums.Role;
 import com.example.docmate.enums.ScheduleAvailabilityStatus;
 import com.example.docmate.enums.UserStatus;
@@ -16,6 +18,7 @@ import com.example.docmate.global.response.GlobalResponseBuilder;
 import com.example.docmate.payload.request.DoctorRequest;
 import com.example.docmate.payload.request.DoctorScheduleRequest;
 import com.example.docmate.payload.request.DoctorSearchRequest;
+import com.example.docmate.payload.request.UserRequest;
 import com.example.docmate.payload.response.CloudinaryUploadResponse;
 import com.example.docmate.payload.response.CommonPageResponse;
 import com.example.docmate.payload.response.DoctorResponse;
@@ -25,6 +28,7 @@ import com.example.docmate.payload.response.UserResponse;
 import com.example.docmate.repository.AppointmentRepository;
 import com.example.docmate.repository.DoctorDocumentsRepository;
 import com.example.docmate.repository.DoctorRepository;
+import com.example.docmate.repository.DoctorRequestRepository;
 import com.example.docmate.repository.DoctorScheduleRepository;
 import com.example.docmate.repository.RoleRepository;
 import com.example.docmate.repository.UserRepository;
@@ -64,6 +68,7 @@ public class DoctorServiceImpl implements DoctorService {
     private final CommonMethods commonMethods;
     private final AppointmentRepository appointmentRepository;
     private final DoctorDocumentsRepository doctorDocumentsRepository;
+    private final DoctorRequestRepository doctorRequestRepository;
 
 
     @Override
@@ -124,22 +129,6 @@ public class DoctorServiceImpl implements DoctorService {
 
         handleDocumentUpload(doctorEntity, citizenshipFront, citizenshipBack, license, educationCertificate);
 
-
-//        DoctorDocumentsEntity documentsEntity = DoctorDocumentsEntity.builder()
-//                .doctor(doctorEntity)
-//                .citizenshipFront(citizenshipFrontUrl.getUrl())
-//                .citizenshipFrontPublicId(citizenshipFrontUrl.getPublicId())
-//                .citizenshipBack(citizenshipBackUrl.getUrl())
-//                .citizenshipBackPublicId(citizenshipBackUrl.getPublicId())
-//                .doctorLicense(doctorLicenseUrl.getUrl())
-//                .doctorLicensePublicId(doctorLicenseUrl.getPublicId())
-//                .educationCertificate(educationCertificateUrl.getUrl())
-//                .educationCertificatePublicId(educationCertificateUrl.getPublicId())
-//                .build();
-
-//        doctorDocumentsRepository.save(documentsEntity);
-
-
         return GlobalResponseBuilder.buildSuccessResponse("Doctor created successfully");
     }
 
@@ -169,17 +158,6 @@ public class DoctorServiceImpl implements DoctorService {
     public GlobalResponse getDoctorById(String id) {
         DoctorEntity doctorEntity = doctorRepository.findById(id)
                 .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
-//        DoctorResponse doctorResponse = modelMapper.map(doctorEntity, DoctorResponse.class);
-//        doctorResponse.setDoctorId(doctorEntity.getId());
-//        if (doctorEntity.getUser() != null) {
-//            UserResponse userResponse = modelMapper.map(doctorEntity.getUser(), UserResponse.class);
-//            if (doctorEntity.getUser().getRole() != null) {
-//                RoleResponse roleResponse = modelMapper.map(doctorEntity.getUser().getRole(), RoleResponse.class);
-//                userResponse.setRole(roleResponse.getName());
-//            }
-//            doctorResponse.setUser(userResponse);
-//        }
-
         DoctorResponse doctorResponse = buildDoctorResponse(doctorEntity);
         return GlobalResponseBuilder.buildSuccessResponseWithData("Doctor fetched successfully", doctorResponse);
     }
@@ -212,58 +190,6 @@ public class DoctorServiceImpl implements DoctorService {
         doctorRepository.save(doctorEntity);
 
         handleDocumentUpload(doctorEntity, citizenshipFront, citizenshipBack, license, educationCertificate);
-
-//        DoctorDocumentsEntity documentsEntity = doctorDocumentsRepository.findByDoctorId(doctorId);
-//
-//        if (citizenshipFront != null) {
-//
-//            String citizenshipFrontPath= commonMethods
-//                    .buildPath("doctor-document",doctorEntity.getId(), "CitizenshipFront");
-//
-//            CloudinaryUploadResponse citizenshipFrontUrl =
-//                    commonMethods.uploadDoctorDocument(citizenshipFront, citizenshipFrontPath, documentsEntity.getCitizenshipFrontPublicId());
-//
-//            documentsEntity.setCitizenshipFront(citizenshipFrontUrl.getUrl());
-//            documentsEntity.setCitizenshipFrontPublicId(citizenshipFrontUrl.getPublicId());
-//        }
-//
-//        if (citizenshipBack != null) {
-//
-//            String citizenshipBackPath= commonMethods
-//                    .buildPath("doctor-document",doctorEntity.getId(), "CitizenshipBack");
-//
-//            CloudinaryUploadResponse citizenshipBackUrl =
-//                    commonMethods.uploadDoctorDocument(citizenshipBack, citizenshipBackPath, documentsEntity.getCitizenshipBackPublicId());
-//
-//            documentsEntity.setCitizenshipBack(citizenshipBackUrl.getUrl());
-//            documentsEntity.setCitizenshipBackPublicId(citizenshipBackUrl.getPublicId());
-//        }
-//
-//        if (license != null) {
-//
-//            String doctorLicensePath= commonMethods
-//                    .buildPath("doctor-document",doctorEntity.getId(), "DoctorLicense");
-//
-//            CloudinaryUploadResponse doctorLicenseUrl =
-//                    commonMethods.uploadDoctorDocument(license, doctorLicensePath, documentsEntity.getDoctorLicensePublicId());
-//
-//            documentsEntity.setDoctorLicense(doctorLicenseUrl.getUrl());
-//            documentsEntity.setDoctorLicensePublicId(doctorLicenseUrl.getPublicId());
-//        }
-//
-//        if (educationCertificate != null) {
-//
-//            String educationCertificatePath= commonMethods
-//                    .buildPath("doctor-document",doctorEntity.getId(), "EducationCertificate");
-//
-//            CloudinaryUploadResponse educationCertificateUrl =
-//                    commonMethods.uploadDoctorDocument(educationCertificate, educationCertificatePath, documentsEntity.getEducationCertificatePublicId());
-//
-//            documentsEntity.setEducationCertificate(educationCertificateUrl.getUrl());
-//            documentsEntity.setEducationCertificatePublicId(educationCertificateUrl.getPublicId());
-//        }
-//
-//        doctorDocumentsRepository.save(documentsEntity);
 
         return GlobalResponseBuilder.buildSuccessResponse("Doctor updated successfully");
     }
@@ -535,9 +461,46 @@ public class DoctorServiceImpl implements DoctorService {
                                   MultipartFile license, MultipartFile educationCertificate){
 
 
+        UserRequest userRequest = doctor.getUser();
+       DoctorRequestEntity doctorRequestEntity = new DoctorRequestEntity();
 
+       doctorRequestEntity.setFirstName(userRequest.getFirstName());
+       doctorRequestEntity.setLastName(userRequest.getLastName());
+       doctorRequestEntity.setEmail(userRequest.getEmail());
+       doctorRequestEntity.setPhone(userRequest.getPhone());
+       doctorRequestEntity.setPassword(passwordEncoder.encode(doctor.getUser().getPassword()));
+       doctorRequestEntity.setGender(userRequest.getGender());
+       doctorRequestEntity.setProvince(userRequest.getProvince());
+       doctorRequestEntity.setAddress(userRequest.getAddress());
 
-        return null;
+       doctorRequestEntity.setSpecialization(doctor.getSpecialization());
+       doctorRequestEntity.setExperience(doctor.getExperience());
+       doctorRequestEntity.setQualification(doctor.getQualification());
+       doctorRequestEntity.setConsultationFee(doctor.getConsultation_fee());
+
+//       doctorRequestEntity.setRequestStatus(DoctorRequestStatus.PENDING);
+
+       doctorRequestRepository.save(doctorRequestEntity);
+
+        if (citizenshipFront == null || citizenshipFront.isEmpty()) {
+            throw new GlobalException("Citizenship front image is required.", HttpStatus.BAD_REQUEST);
+        }
+
+        if (citizenshipBack == null || citizenshipBack.isEmpty()) {
+            throw new GlobalException("Citizenship back image is required.", HttpStatus.BAD_REQUEST);
+        }
+
+        if (license == null || license.isEmpty()) {
+            throw new GlobalException("Doctor license is required.", HttpStatus.BAD_REQUEST);
+        }
+
+        if (educationCertificate == null || educationCertificate.isEmpty()) {
+            throw new GlobalException("Higher education certificate is required.", HttpStatus.BAD_REQUEST);
+        }
+
+        handleRequestDocumentUpload(doctorRequestEntity, citizenshipFront, citizenshipBack, license, educationCertificate);
+
+        return GlobalResponseBuilder.buildSuccessResponse("Doctor application submitted successfully");
     }
 
     public DoctorResponse buildDoctorResponse(DoctorEntity doctor) {
@@ -656,5 +619,63 @@ public class DoctorServiceImpl implements DoctorService {
         doctorDocumentsRepository.save(documentsEntity);
     }
 
+
+
+    public void handleRequestDocumentUpload(DoctorRequestEntity doctorRequestEntity,
+                                     MultipartFile citizenshipFront,
+                                     MultipartFile citizenshipBack,
+                                     MultipartFile license,
+                                     MultipartFile educationCertificate) {
+
+
+        String citizenshipFrontPath= commonMethods
+                .buildPath("doctor-document-request",doctorRequestEntity.getId(), "CitizenshipFront");
+
+        String citizenshipBackPath= commonMethods
+                .buildPath("doctor-document-request",doctorRequestEntity.getId(), "CitizenshipBack");
+
+        String doctorLicensePath= commonMethods
+                .buildPath("doctor-document-request",doctorRequestEntity.getId(), "DoctorLicense");
+
+        String educationCertificatePath= commonMethods
+                .buildPath("doctor-document-request",doctorRequestEntity.getId(), "EducationCertificate");
+
+
+            if (citizenshipFront != null) {
+                CloudinaryUploadResponse citizenshipFrontUrl =
+                        commonMethods.uploadDoctorDocument(citizenshipFront, citizenshipFrontPath, null);
+
+                doctorRequestEntity.setCitizenshipFront(citizenshipFrontUrl.getUrl());
+                doctorRequestEntity.setCitizenshipFrontPublicId(citizenshipFrontUrl.getPublicId());
+            }
+
+            if (citizenshipBack != null) {
+
+                CloudinaryUploadResponse citizenshipBackUrl =
+                        commonMethods.uploadDoctorDocument(citizenshipBack, citizenshipBackPath, null);
+
+                doctorRequestEntity.setCitizenshipBack(citizenshipBackUrl.getUrl());
+                doctorRequestEntity.setCitizenshipBackPublicId(citizenshipBackUrl.getPublicId());
+            }
+
+            if (license != null) {
+
+                CloudinaryUploadResponse doctorLicenseUrl =
+                        commonMethods.uploadDoctorDocument(license, doctorLicensePath, null);
+
+                doctorRequestEntity.setDoctorLicense(doctorLicenseUrl.getUrl());
+                doctorRequestEntity.setDoctorLicensePublicId(doctorLicenseUrl.getPublicId());
+            }
+
+            if (educationCertificate != null) {
+                CloudinaryUploadResponse educationCertificateUrl =
+                        commonMethods.uploadDoctorDocument(educationCertificate, educationCertificatePath, null);
+
+                doctorRequestEntity.setEducationCertificate(educationCertificateUrl.getUrl());
+                doctorRequestEntity.setEducationCertificatePublicId(educationCertificateUrl.getPublicId());
+            }
+
+        doctorRequestRepository.save(doctorRequestEntity);
+    }
 
 }

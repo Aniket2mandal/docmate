@@ -52,6 +52,5 @@ public class UserRequest {
     @NotBlank(message = "Address is required")
     private String province;
 
-    @NotNull(message = "Status is required")
     private UserStatus status;
 }

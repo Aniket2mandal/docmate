@@ -113,4 +113,23 @@ public class AdminController {
         return ResponseEntity.ok(patientService.deletePatient(patientId));
     }
 
+    @GetMapping("/get-doctor-requests")
+    public ResponseEntity<GlobalResponse> getDoctorRequests(@RequestParam(defaultValue = "0") int page,
+                                                            @RequestParam(defaultValue = "9") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(adminService.getDoctorRequests(pageable));
+    }
+
+    @GetMapping("/get-doctor-request/{doctorRequestId}")
+    public ResponseEntity<GlobalResponse> getDoctorRequests(@PathVariable String doctorRequestId) {
+
+        return ResponseEntity.ok(adminService.getDoctorRequest(doctorRequestId));
+    }
+
+    @PostMapping("/approve-doctor-request/{doctorRequestId}")
+    public ResponseEntity<GlobalResponse> approveDoctorRequest(@PathVariable String doctorRequestId){
+        return ResponseEntity.ok(adminService.approveDoctorRequest(doctorRequestId));
+    }
+
 }

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Map;
 
 @Component
@@ -111,6 +112,59 @@ public class CommonMethods {
 
             throw new GlobalException(
                     "Failed to upload document",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    public CloudinaryUploadResponse moveDocument(
+            String documentUrl,
+            String oldPublicId,
+            String newPath) {
+
+        try {
+
+            URL url = new URL(documentUrl);
+
+            byte[] bytes = url.openStream().readAllBytes();
+
+            Map uploadResult = cloudinary.uploader().upload(
+                    bytes,
+                    ObjectUtils.asMap(
+                            "folder", newPath,
+                            "resource_type", "auto"
+                    )
+            );
+
+            String newUrl = uploadResult.get("secure_url").toString();
+            String newPublicId = uploadResult.get("public_id").toString();
+
+            if (oldPublicId != null && !oldPublicId.isBlank()) {
+                cloudinary.uploader().destroy(oldPublicId, ObjectUtils.emptyMap());
+            }
+
+            return CloudinaryUploadResponse.builder()
+                    .url(newUrl)
+                    .publicId(newPublicId)
+                    .build();
+
+        } catch (Exception e) {
+            throw new GlobalException(
+                    "Failed to move document",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    public void deleteSubFolder(String id){
+        try {
+            cloudinary.api().deleteFolder(
+                    "docmate/doctor-document-request/" +id,
+                    ObjectUtils.emptyMap()
+            );
+        } catch (Exception e) {
+            throw new GlobalException(
+                    "Failed to delete Cloudinary folder",
                     HttpStatus.INTERNAL_SERVER_ERROR
             );
         }
