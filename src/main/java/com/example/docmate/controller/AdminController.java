@@ -17,8 +17,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @RestController
@@ -39,14 +41,25 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAllRole());
     }
 
-    @PostMapping("/create-doctor")
-    public ResponseEntity<GlobalResponse> createDoctor(@Valid @RequestBody DoctorRequest doctor) {
-        return ResponseEntity.ok(doctorService.createDoctor(doctor));
+    @PostMapping(value = "/create-doctor", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GlobalResponse> createDoctor(@Valid
+                                                       @RequestPart("doctorRequest") DoctorRequest doctor,
+
+                                                       @RequestPart("citizenshipFront") MultipartFile citizenshipFront,
+
+                                                       @RequestPart("citizenshipBack") MultipartFile citizenshipBack,
+
+                                                       @RequestPart("doctorLicense") MultipartFile doctorLicense,
+
+                                                       @RequestPart("educationCertificate") MultipartFile educationCertificate
+    ) {
+        return ResponseEntity.ok(doctorService.createDoctor(doctor,
+                citizenshipFront, citizenshipBack, doctorLicense, educationCertificate));
     }
 
     @GetMapping("/get-all-doctor")
-    public ResponseEntity<GlobalResponse> getAllDoctor(  @RequestParam(defaultValue = "0") int page,
-                                                         @RequestParam(defaultValue = "9") int size) {
+    public ResponseEntity<GlobalResponse> getAllDoctor(@RequestParam(defaultValue = "0") int page,
+                                                       @RequestParam(defaultValue = "9") int size) {
 //        return ResponseEntity.ok(doctorService.getAllDoctor(page,size));
         try {
             Pageable pageable = PageRequest.of(page, size);
@@ -68,15 +81,27 @@ public class AdminController {
         return ResponseEntity.ok(adminService.changeStatus(user, userId));
     }
 
-    @PutMapping("/update-doctor/{doctorId}")
-    public ResponseEntity<GlobalResponse> updateDoctor(@RequestBody DoctorRequest doctorRequest, @PathVariable String doctorId) {
-        return ResponseEntity.ok(doctorService.updateDoctor(doctorRequest, doctorId));
+    @PutMapping(value = "/update-doctor/{doctorId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GlobalResponse> updateDoctor(@Valid
+                                                       @RequestPart("doctorRequest") DoctorRequest doctorRequest,
+
+                                                       @RequestPart(value = "citizenshipFront", required = false) MultipartFile citizenshipFront,
+
+                                                       @RequestPart(value = "citizenshipBack", required = false) MultipartFile citizenshipBack,
+
+                                                       @RequestPart(value = "doctorLicense", required = false) MultipartFile doctorLicense,
+
+                                                       @RequestPart(value = "educationCertificate", required = false) MultipartFile educationCertificate,
+
+                                                       @PathVariable String doctorId) {
+        return ResponseEntity.ok(doctorService.updateDoctor(doctorRequest, doctorId,
+                citizenshipFront, citizenshipBack, doctorLicense, educationCertificate));
     }
 
     @DeleteMapping("/delete-doctor/{doctorId}")
-        public ResponseEntity<GlobalResponse> deleteDoctor(@PathVariable String doctorId) {
-            return ResponseEntity.ok(doctorService.deleteDoctor(doctorId));
-        }
+    public ResponseEntity<GlobalResponse> deleteDoctor(@PathVariable String doctorId) {
+        return ResponseEntity.ok(doctorService.deleteDoctor(doctorId));
+    }
 
     @GetMapping("/get-all-patient")
     public ResponseEntity<GlobalResponse> getAllPatient() {

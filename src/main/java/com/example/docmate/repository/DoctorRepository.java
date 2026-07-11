@@ -16,7 +16,7 @@ public interface DoctorRepository extends JpaRepository<DoctorEntity, String> {
     @Query("SELECT d " +
             "FROM DoctorEntity d " +
             "JOIN FETCH d.user u " +
-            "WHERE LOWER(TRIM(d.specialization)) IN ?1 " +
+            "WHERE d.specialization IN ?1 " +
             "AND u.status = :status")
     List<DoctorEntity> findActiveDoctorsBySpecializations(
             List<String> specializations,
@@ -28,4 +28,17 @@ public interface DoctorRepository extends JpaRepository<DoctorEntity, String> {
             "JOIN FETCH d.user u " +
             "WHERE u.status = :status")
     Page<DoctorEntity> findAllDoctors(UserStatus status, Pageable pageable);
+
+    @Query("SELECT d " +
+            "FROM DoctorEntity d " +
+            "JOIN FETCH d.user u " +
+            "WHERE d.specialization = :specialization " +
+            "AND u.status = :status " +
+            "AND u.province = :province " )
+    Page<DoctorEntity> findActiveDoctorsBySpecializationAndProvince(
+            String specialization,
+            UserStatus status,
+            String province,
+            Pageable pageable
+    );
 }

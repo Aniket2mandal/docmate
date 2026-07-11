@@ -2,6 +2,7 @@ package com.example.docmate.service.impl;
 
 
 import com.example.docmate.entity.AppointmentEntity;
+import com.example.docmate.entity.DoctorDocumentsEntity;
 import com.example.docmate.entity.DoctorEntity;
 import com.example.docmate.entity.DoctorScheduleEntity;
 import com.example.docmate.entity.RoleEntity;
@@ -14,11 +15,15 @@ import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
 import com.example.docmate.payload.request.DoctorRequest;
 import com.example.docmate.payload.request.DoctorScheduleRequest;
+import com.example.docmate.payload.request.DoctorSearchRequest;
+import com.example.docmate.payload.response.CloudinaryUploadResponse;
+import com.example.docmate.payload.response.CommonPageResponse;
 import com.example.docmate.payload.response.DoctorResponse;
 import com.example.docmate.payload.response.DoctorScheduleResponse;
 import com.example.docmate.payload.response.RoleResponse;
 import com.example.docmate.payload.response.UserResponse;
 import com.example.docmate.repository.AppointmentRepository;
+import com.example.docmate.repository.DoctorDocumentsRepository;
 import com.example.docmate.repository.DoctorRepository;
 import com.example.docmate.repository.DoctorScheduleRepository;
 import com.example.docmate.repository.RoleRepository;
@@ -33,6 +38,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 
 import java.time.LocalDate;
@@ -41,6 +47,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 import static org.springframework.util.ObjectUtils.isEmpty;
 
@@ -56,9 +63,15 @@ public class DoctorServiceImpl implements DoctorService {
     private final DoctorScheduleRepository doctorScheduleRepository;
     private final CommonMethods commonMethods;
     private final AppointmentRepository appointmentRepository;
+    private final DoctorDocumentsRepository doctorDocumentsRepository;
+
 
     @Override
-    public GlobalResponse createDoctor(DoctorRequest doctor) {
+    public GlobalResponse createDoctor(DoctorRequest doctor,
+                                       MultipartFile citizenshipFront,
+                                       MultipartFile citizenshipBack,
+                                       MultipartFile license,
+                                       MultipartFile educationCertificate) {
         UserEntity userEntity = null;
         if (!isEmpty(doctor.getUser()) && doctor.getUser() != null) {
             if (userRepository.existsByEmail(doctor.getUser().getEmail())) {
@@ -92,6 +105,52 @@ public class DoctorServiceImpl implements DoctorService {
         DoctorEntity doctorEntity = modelMapper.map(doctor, DoctorEntity.class);
         doctorEntity.setUser(userEntity);
         doctorRepository.save(doctorEntity);
+
+        if (citizenshipFront == null || citizenshipFront.isEmpty()) {
+            throw new GlobalException("Citizenship front image is required.", HttpStatus.BAD_REQUEST);
+        }
+
+        if (citizenshipBack == null || citizenshipBack.isEmpty()) {
+            throw new GlobalException("Citizenship back image is required.", HttpStatus.BAD_REQUEST);
+        }
+
+        if (license == null || license.isEmpty()) {
+            throw new GlobalException("Doctor license is required.", HttpStatus.BAD_REQUEST);
+        }
+
+        if (educationCertificate == null || educationCertificate.isEmpty()) {
+            throw new GlobalException("Higher education certificate is required.", HttpStatus.BAD_REQUEST);
+        }
+
+
+        CloudinaryUploadResponse citizenshipFrontUrl =
+                commonMethods.uploadDoctorDocument(citizenshipFront, doctorEntity.getId(), null, "CitizenshipFront");
+
+        CloudinaryUploadResponse citizenshipBackUrl =
+                commonMethods.uploadDoctorDocument(citizenshipBack, doctorEntity.getId(), null, "CitizenshipBack");
+
+        CloudinaryUploadResponse doctorLicenseUrl =
+                commonMethods.uploadDoctorDocument(license, doctorEntity.getId(), null, "DoctorLicense");
+
+        CloudinaryUploadResponse educationCertificateUrl =
+                commonMethods.uploadDoctorDocument(educationCertificate, doctorEntity.getId(), null, "EducationCertificate");
+
+
+        DoctorDocumentsEntity documentsEntity = DoctorDocumentsEntity.builder()
+                .doctor(doctorEntity)
+                .citizenshipFront(citizenshipFrontUrl.getUrl())
+                .citizenshipFrontPublicId(citizenshipFrontUrl.getPublicId())
+                .citizenshipBack(citizenshipBackUrl.getUrl())
+                .citizenshipBackPublicId(citizenshipBackUrl.getPublicId())
+                .doctorLicense(doctorLicenseUrl.getUrl())
+                .doctorLicensePublicId(doctorLicenseUrl.getPublicId())
+                .educationCertificate(educationCertificateUrl.getUrl())
+                .educationCertificatePublicId(educationCertificateUrl.getPublicId())
+                .build();
+
+        doctorDocumentsRepository.save(documentsEntity);
+
+
         return GlobalResponseBuilder.buildSuccessResponse("Doctor created successfully");
     }
 
@@ -99,25 +158,21 @@ public class DoctorServiceImpl implements DoctorService {
     public GlobalResponse getAllDoctor(Pageable pageable) {
 //        Pageable pageable = PageRequest.of(page, size);
 
-        Page<DoctorEntity> doctorEntityList = doctorRepository.findAllDoctors(UserStatus.ACTIVE ,pageable);
+        Page<DoctorEntity> doctorEntityList = doctorRepository.findAllDoctors(UserStatus.ACTIVE, pageable);
 
         List<DoctorResponse> doctorResponseList = doctorEntityList.getContent().stream()
-                .map(doctor -> {
-                    DoctorResponse doctorResponse = modelMapper.map(doctor, DoctorResponse.class);
-                    doctorResponse.setDoctorId(doctor.getId());
-                    if (doctor.getUser() != null) {
-                        UserResponse userResponse = modelMapper.map(doctor.getUser(), UserResponse.class);
-                        if (doctor.getUser().getRole() != null) {
-                            RoleResponse roleResponse = modelMapper.map(doctor.getUser().getRole(), RoleResponse.class);
-                            userResponse.setRole(roleResponse.getName());
-                        }
-                        doctorResponse.setUser(userResponse);
-                    }
-                    return doctorResponse;
-                }).toList();
+                .map(
+//                doctor -> buildDoctorResponse(doctor)
+//                you can write as below also
+                        this::buildDoctorResponse
+                ).toList();
+
+        CommonPageResponse<DoctorResponse> response = new CommonPageResponse<>();
+        response.setPaginationInfo(CommonMethods.getPaginationInfo(doctorEntityList));
+        response.setData(doctorResponseList);
 
 
-        return GlobalResponseBuilder.buildSuccessResponseWithData("All doctor fetched successfully", doctorResponseList);
+        return GlobalResponseBuilder.buildSuccessResponseWithData("All doctor fetched successfully", response);
 
     }
 
@@ -140,7 +195,12 @@ public class DoctorServiceImpl implements DoctorService {
 
 
     @Override
-    public GlobalResponse updateDoctor(DoctorRequest doctorRequest, String doctorId) {
+    public GlobalResponse updateDoctor(DoctorRequest doctorRequest, String doctorId,
+                                       MultipartFile citizenshipFront,
+                                       MultipartFile citizenshipBack,
+                                       MultipartFile license,
+                                       MultipartFile educationCertificate) {
+
         DoctorEntity doctorEntity = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
         if (doctorRequest.getUser() != null) {
@@ -159,6 +219,39 @@ public class DoctorServiceImpl implements DoctorService {
 
         modelMapper.map(doctorRequest, doctorEntity);
         doctorRepository.save(doctorEntity);
+
+        DoctorDocumentsEntity documentsEntity = doctorDocumentsRepository.findByDoctorId(doctorId);
+
+        if (citizenshipFront != null) {
+            CloudinaryUploadResponse citizenshipFrontUrl =
+                    commonMethods.uploadDoctorDocument(citizenshipFront, doctorEntity.getId(), documentsEntity.getCitizenshipFrontPublicId(), "CitizenshipFront");
+            documentsEntity.setCitizenshipFront(citizenshipFrontUrl.getUrl());
+            documentsEntity.setCitizenshipFrontPublicId(citizenshipFrontUrl.getPublicId());
+        }
+
+        if (citizenshipBack != null) {
+            CloudinaryUploadResponse citizenshipBackUrl =
+                    commonMethods.uploadDoctorDocument(citizenshipBack, doctorEntity.getId(), documentsEntity.getCitizenshipBackPublicId(), "CitizenshipBack");
+            documentsEntity.setCitizenshipBack(citizenshipBackUrl.getUrl());
+            documentsEntity.setCitizenshipBackPublicId(citizenshipBackUrl.getPublicId());
+        }
+
+        if (license != null) {
+            CloudinaryUploadResponse doctorLicenseUrl =
+                    commonMethods.uploadDoctorDocument(license, doctorEntity.getId(), documentsEntity.getDoctorLicensePublicId(), "DoctorLicense");
+            documentsEntity.setDoctorLicense(doctorLicenseUrl.getUrl());
+            documentsEntity.setDoctorLicensePublicId(doctorLicenseUrl.getPublicId());
+        }
+
+        if (educationCertificate != null) {
+            CloudinaryUploadResponse educationCertificateUrl =
+                    commonMethods.uploadDoctorDocument(educationCertificate, doctorEntity.getId(), documentsEntity.getEducationCertificatePublicId(), "EducationCertificate");
+            documentsEntity.setEducationCertificate(educationCertificateUrl.getUrl());
+            documentsEntity.setEducationCertificatePublicId(educationCertificateUrl.getPublicId());
+        }
+
+        doctorDocumentsRepository.save(documentsEntity);
+
         return GlobalResponseBuilder.buildSuccessResponse("Doctor updated successfully");
     }
 
@@ -291,7 +384,7 @@ public class DoctorServiceImpl implements DoctorService {
     public GlobalResponse getAvailableSlots(String doctorId) {
 
         List<DoctorScheduleEntity> availableSlots = doctorScheduleRepository
-                .findByDoctorIdAndAvailable(doctorId,ScheduleAvailabilityStatus.AVAILABLE);
+                .findByDoctorIdAndAvailable(doctorId, ScheduleAvailabilityStatus.AVAILABLE);
 
 //        Duplicated code
 
@@ -352,6 +445,15 @@ public class DoctorServiceImpl implements DoctorService {
                 .toList();
         doctorResponse.setSchedules(doctorScheduleResponseList);
 
+        DoctorDocumentsEntity documentsEntity = doctorDocumentsRepository.findByDoctorId(doctorId);
+
+        if(documentsEntity != null) {
+            doctorResponse.setCitizenshipFrontUrl(documentsEntity.getCitizenshipFront());
+            doctorResponse.setCitizenshipBackUrl(documentsEntity.getCitizenshipBack());
+            doctorResponse.setDoctorLicenseUrl(documentsEntity.getDoctorLicense());
+            doctorResponse.setEducationCertificateUrl(documentsEntity.getEducationCertificate());
+        }
+
         return GlobalResponseBuilder.buildSuccessResponseWithData("Doctor Details", doctorResponse);
     }
 
@@ -389,6 +491,43 @@ public class DoctorServiceImpl implements DoctorService {
         doctorRepository.delete(doctorEntity);
 
         return GlobalResponseBuilder.buildSuccessResponse("Doctor deleted successfully");
+    }
+
+    @Override
+    public GlobalResponse searchDoctor(DoctorSearchRequest doctorRequest, Pageable pageable) {
+
+        Page<DoctorEntity> doctorEntities =
+                doctorRepository.findActiveDoctorsBySpecializationAndProvince(doctorRequest.getSpecialization(),
+                        UserStatus.ACTIVE, doctorRequest.getProvince(), pageable);
+
+        List<DoctorResponse> doctorResponseList = doctorEntities.getContent().stream()
+                .map(
+//                doctor -> buildDoctorResponse(doctor)
+//                you can write as below also
+                        this::buildDoctorResponse
+                ).toList();
+
+        CommonPageResponse<DoctorResponse> response = new CommonPageResponse<>();
+        response.setPaginationInfo(CommonMethods.getPaginationInfo(doctorEntities));
+        response.setData(doctorResponseList);
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Doctors", response);
+    }
+
+    public DoctorResponse buildDoctorResponse(DoctorEntity doctor) {
+
+        DoctorResponse doctorResponse = modelMapper.map(doctor, DoctorResponse.class);
+        doctorResponse.setDoctorId(doctor.getId());
+        if (doctor.getUser() != null) {
+            UserResponse userResponse = modelMapper.map(doctor.getUser(), UserResponse.class);
+            if (doctor.getUser().getRole() != null) {
+                RoleResponse roleResponse = modelMapper.map(doctor.getUser().getRole(), RoleResponse.class);
+                userResponse.setRole(roleResponse.getName());
+            }
+            doctorResponse.setUser(userResponse);
+        }
+        return doctorResponse;
+
     }
 
 }

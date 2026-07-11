@@ -38,4 +38,10 @@ public class DoctorResponse {
     private String aiPredictedSpecialization;
 
     private Double aiConfidence;
+
+    //DOCTOR DOCUMENTS
+    private String citizenshipFrontUrl;
+    private String citizenshipBackUrl;
+    private String doctorLicenseUrl;
+    private String educationCertificateUrl;
 }

@@ -22,6 +22,7 @@ public class UserResponse {
     private String gender;
     private String phone;
     private String address;
+    private String province;
     private Role role;
 
 //    FOR DOCTOR AND PATIENT PROFILE

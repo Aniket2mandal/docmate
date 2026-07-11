@@ -34,7 +34,7 @@ public class UserRequest {
     @Email(message = "Invalid email format")
     private String email;
 
-    @NotBlank(message = "Password is required")
+//    @NotBlank(message = "Password is required")
     @Size(min = 6, max = 30, message = "Password must be between 6 and 30 characters")
     private String password;
 
@@ -48,6 +48,9 @@ public class UserRequest {
     @NotBlank(message = "Address is required")
     @Size(max = 100, message = "Address must not exceed 100 characters")
     private String address;
+
+    @NotBlank(message = "Address is required")
+    private String province;
 
     @NotNull(message = "Status is required")
     private UserStatus status;
