@@ -46,8 +46,16 @@ public class CommonMethods {
         return paginationInfo;
     }
 
+    public String buildPath(String folderName,String id, String documentType) {
+        String path = "docmate/"+folderName+ "/" + id ;
+        if (documentType != null && !documentType.isBlank()) {
+            path += "/" + documentType;
+        }
+        return path;
+    }
+
     public CloudinaryUploadResponse uploadDoctorDocument(
-            MultipartFile file,String doctorId,String oldPublicId,String documentName) {
+            MultipartFile file,String path,String oldPublicId) {
         try {
 
             if (file == null || file.isEmpty()) {
@@ -73,7 +81,7 @@ public class CommonMethods {
             Map uploadResult = cloudinary.uploader().upload(
                     file.getBytes(),
                     ObjectUtils.asMap(
-                            "folder", "docmate/doctor-document/" + doctorId + "/"+documentName,
+                            "folder", path,
                             "resource_type", "auto"
                     )
             );

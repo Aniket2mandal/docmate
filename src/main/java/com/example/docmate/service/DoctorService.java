@@ -34,4 +34,8 @@ public interface DoctorService {
     GlobalResponse deleteDoctor(String doctorId);
 
     GlobalResponse searchDoctor(DoctorSearchRequest doctorRequest,Pageable pageable);
+
+    GlobalResponse ApplyForDoctor(DoctorRequest doctor,
+                                  MultipartFile citizenshipFront,MultipartFile citizenshipBack,
+                                  MultipartFile license, MultipartFile educationCertificate);
 }
