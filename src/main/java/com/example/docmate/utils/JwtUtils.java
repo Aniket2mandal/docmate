@@ -23,13 +23,13 @@ public class JwtUtils {
     @Value("${jwt.expiration:86400000}") // 24 hours in milliseconds
     private Long expiration;
 
-    @Value("${jwt.expiration:900000}") // 15 minutes for access token
+    @Value("${jwt.expiration}") // 15 minutes for access token
     private Long accessTokenExpiration;
 
 //@Value("${jwt.expiration:30000}") // 30 seconds for access token
 //private Long accessTokenExpiration;
 
-    @Value("${jwt.refresh-expiration:604800000}") // 7 days for refresh token
+    @Value("${jwt.refresh-expiration}") // 7 days for refresh token
     private Long refreshTokenExpiration;
 
 //    onverts your secret string into a cryptographic key
