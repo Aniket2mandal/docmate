@@ -1,0 +1,64 @@
+package com.example.docmate.entity;
+
+import com.example.docmate.enums.AppointmentStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
+@Entity
+@Table(name = "tbl_appointment")
+@Getter
+@Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class AppointmentEntity extends BaseEntity {
+
+    @Column(name = "appointment_date")
+    private LocalDate appointmentDate;
+
+    @Column(name = "appointment_time")
+    private LocalTime appointmentTime;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name="appointment_status")
+    private AppointmentStatus status;
+
+    @Column(name="reason_for_visit")
+    private String reasonForVisit;
+
+    @ManyToOne(fetch= FetchType.LAZY)
+    @JoinColumn(name="doctor_id", referencedColumnName = "id")
+    private DoctorEntity doctor;
+
+    @Column(name="doctor_id", insertable = false, updatable = false)
+    private String doctorId;
+
+    @ManyToOne(fetch= FetchType.LAZY)
+    @JoinColumn(name="patient_id", referencedColumnName = "id")
+    private PatientEntity patient;
+
+    @Column(name="patient_id", insertable = false, updatable = false)
+    private String patientId;
+
+    @ManyToOne(fetch= FetchType.LAZY)
+    @JoinColumn(name="doctor_schedule_id", referencedColumnName = "id")
+    private DoctorScheduleEntity doctorSchedule;
+
+    @Column(name="doctor_schedule_id", insertable = false, updatable = false)
+    private String doctorScheduleId;
+}

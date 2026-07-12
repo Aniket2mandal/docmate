@@ -1,0 +1,60 @@
+package com.example.docmate.entity;
+
+import com.example.docmate.enums.Gender;
+import com.example.docmate.enums.UserStatus;
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "tbl_user")
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserEntity extends BaseEntity {
+
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "last_name")
+    private String lastName;
+
+    @Column(name = "email")
+    private String email;
+
+    @Column(name = "password")
+    private String password;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    @Builder.Default
+    private UserStatus status = UserStatus.ACTIVE;  //if you are using builder it will not work because builder will override the default value so you have to set it in builder as well so add  @Builder.default
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gender")
+    private Gender gender;
+
+    @Column(name = "phone")
+    private String phone;
+
+    @Column(name = "address")
+    private String address;
+
+    @Column(name="province")
+    private String province;
+
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "image_public_id")
+    private String imagePublicId;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", referencedColumnName = "id")
+    private RoleEntity role;
+
+    @Column(name = "role_id", insertable = false, updatable = false)
+    private String roleId;
+
+}
