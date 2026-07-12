@@ -21,6 +21,7 @@ import com.example.docmate.payload.request.DoctorSearchRequest;
 import com.example.docmate.payload.request.UserRequest;
 import com.example.docmate.payload.response.CloudinaryUploadResponse;
 import com.example.docmate.payload.response.CommonPageResponse;
+import com.example.docmate.payload.response.DoctorRequestResponse;
 import com.example.docmate.payload.response.DoctorResponse;
 import com.example.docmate.payload.response.DoctorScheduleResponse;
 import com.example.docmate.payload.response.RoleResponse;
@@ -291,8 +292,8 @@ public class DoctorServiceImpl implements DoctorService {
     }
 
     @Override
-    public GlobalResponse getAllSchedule(String doctorId) {
-        List<DoctorScheduleEntity> doctorScheduleEntityList = doctorScheduleRepository.findByDoctorId(doctorId);
+    public GlobalResponse getAllSchedule(String doctorId, Pageable pageable) {
+        Page<DoctorScheduleEntity> doctorScheduleEntityList = doctorScheduleRepository.findByDoctorId(doctorId,pageable);
         List<DoctorScheduleResponse> doctorScheduleResponseList = doctorScheduleEntityList.stream()
                 .map(schedule -> {
 //                        modelMapper.map(schedule,DoctorScheduleResponse.class))
@@ -316,14 +317,19 @@ public class DoctorServiceImpl implements DoctorService {
                     return doctorScheduleResponse;
                 })
                 .toList();
-        return GlobalResponseBuilder.buildSuccessResponseWithData("Doctor schedule fetched succesfully", doctorScheduleResponseList);
+
+        CommonPageResponse<DoctorScheduleResponse> response = new CommonPageResponse<>();
+        response.setPaginationInfo(CommonMethods.getPaginationInfo(doctorScheduleEntityList));
+        response.setData(doctorScheduleResponseList);
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Doctor schedule fetched succesfully", response);
     }
 
     @Override
-    public GlobalResponse getAvailableSlots(String doctorId) {
+    public GlobalResponse getAvailableSlots(String doctorId, Pageable pageable) {
 
-        List<DoctorScheduleEntity> availableSlots = doctorScheduleRepository
-                .findByDoctorIdAndAvailable(doctorId, ScheduleAvailabilityStatus.AVAILABLE);
+        Page<DoctorScheduleEntity> availableSlots = doctorScheduleRepository
+                .findByDoctorIdAndAvailable(doctorId, ScheduleAvailabilityStatus.AVAILABLE,pageable);
 
 //        Duplicated code
 
@@ -353,7 +359,11 @@ public class DoctorServiceImpl implements DoctorService {
                 })
                 .toList();
 
-        return GlobalResponseBuilder.buildSuccessResponseWithData("Available slots fetched succesfully", availableSlotResponses);
+        CommonPageResponse<DoctorScheduleResponse> response = new CommonPageResponse<>();
+        response.setPaginationInfo(CommonMethods.getPaginationInfo(availableSlots));
+        response.setData(availableSlotResponses);
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("Available slots fetched succesfully", response);
     }
 
     @Override

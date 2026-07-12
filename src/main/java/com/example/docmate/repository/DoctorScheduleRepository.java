@@ -7,6 +7,8 @@ import com.example.docmate.enums.AppointmentStatus;
 import com.example.docmate.enums.ScheduleAvailabilityStatus;
 import com.example.docmate.enums.WeekDay;
 import com.example.docmate.payload.request.DoctorScheduleRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -22,8 +24,9 @@ public interface DoctorScheduleRepository extends JpaRepository<DoctorScheduleEn
     Optional<DoctorScheduleEntity> findByDoctorIdAndStartDateAndStartTimeAndAvailable(
             String doctorId, LocalDate date, LocalTime startTime,ScheduleAvailabilityStatus status);
 
-   List<DoctorScheduleEntity> findByDoctorId(String doctorId);
-    List<DoctorScheduleEntity> findByDoctorIdAndAvailable(String doctorId,ScheduleAvailabilityStatus status);
+   Page<DoctorScheduleEntity> findByDoctorId(String doctorId, Pageable pageable);
+    List<DoctorScheduleEntity> findByDoctorId(String doctorId);
+    Page<DoctorScheduleEntity> findByDoctorIdAndAvailable(String doctorId,ScheduleAvailabilityStatus status,Pageable pageable);
 
     @Query("SELECT ds FROM DoctorScheduleEntity ds " +
             "WHERE ds.doctorId IN :doctorIds " +
