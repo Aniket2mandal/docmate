@@ -8,12 +8,14 @@ import com.example.docmate.entity.RefreshTokenEntity;
 import com.example.docmate.entity.RoleEntity;
 import com.example.docmate.entity.UserEntity;
 import com.example.docmate.enums.Role;
+import com.example.docmate.enums.UserStatus;
 import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
 import com.example.docmate.payload.request.LoginRequest;
 import com.example.docmate.payload.request.PatientRequest;
 import com.example.docmate.payload.request.UserRequest;
+import com.example.docmate.payload.response.CloudinaryUploadResponse;
 import com.example.docmate.payload.response.DoctorResponse;
 import com.example.docmate.payload.response.LoginResponse;
 import com.example.docmate.payload.response.PatientResponse;
@@ -25,6 +27,7 @@ import com.example.docmate.repository.RoleRepository;
 import com.example.docmate.repository.UserRepository;
 import com.example.docmate.service.AuthService;
 import com.example.docmate.service.RefreshTokenService;
+import com.example.docmate.utils.CommonMethods;
 import com.example.docmate.utils.JwtUtils;
 import com.example.docmate.utils.MyConstants;
 import jakarta.transaction.Transactional;
@@ -67,6 +70,7 @@ public class AuthServiceImpl implements AuthService {
     private final DoctorRepository doctorRepository;
     private final RefreshTokenService refreshTokenService;
     private final Cloudinary cloudinary;
+    private final CommonMethods commonMethods;
 
     public GlobalResponse registerAdmin(UserRequest user) {
 
@@ -163,7 +167,7 @@ public class AuthServiceImpl implements AuthService {
 //            Authentication authentication = authenticationManager
 //                    .authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
-            UserEntity userEntity = userRepository.findByEmail(loginRequest.getUsername())
+            UserEntity userEntity = userRepository.findByEmailAndStatus(loginRequest.getUsername(), UserStatus.ACTIVE)
                     .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
             if (!passwordEncoder.matches(loginRequest.getPassword(), userEntity.getPassword())) {
@@ -232,27 +236,33 @@ public class AuthServiceImpl implements AuthService {
 
             String oldImagePublicId = userEntity.getImagePublicId();
 
-            if (file == null || file.isEmpty()) {
-                throw new GlobalException("Please select an image", HttpStatus.BAD_REQUEST);
-            }
+//            if (file == null || file.isEmpty()) {
+//                throw new GlobalException("Please select an image", HttpStatus.BAD_REQUEST);
+//            }
+//
+//            if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+//                throw new GlobalException("Only image files are allowed", HttpStatus.BAD_REQUEST);
+//            }
+//
+//            Map uploadResult = cloudinary.uploader().upload(
+//                    file.getBytes(),
+//                    ObjectUtils.asMap(
+//                            "folder", "docmate/users/" + userId,
+//                            "resource_type", "image"
+//                    )
+//            );
+//
+//            String imageUrl = uploadResult.get("secure_url").toString();
+//            String imagePublicId = uploadResult.get("public_id").toString();
 
-            if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
-                throw new GlobalException("Only image files are allowed", HttpStatus.BAD_REQUEST);
-            }
+//            String path = "docmate/users/" + userId;
 
-            Map uploadResult = cloudinary.uploader().upload(
-                    file.getBytes(),
-                    ObjectUtils.asMap(
-                            "folder", "docmate/users/" + userId,
-                            "resource_type", "image"
-                    )
-            );
+            String path = commonMethods.buildPath("users", userId, null);
 
-            String imageUrl = uploadResult.get("secure_url").toString();
-            String imagePublicId = uploadResult.get("public_id").toString();
+            CloudinaryUploadResponse urlResponse = commonMethods.uploadDoctorDocument(file, path, oldImagePublicId);
 
-            userEntity.setImageUrl(imageUrl);
-            userEntity.setImagePublicId(imagePublicId);
+            userEntity.setImageUrl(urlResponse.getUrl());
+            userEntity.setImagePublicId(urlResponse.getPublicId());
 
             userRepository.save(userEntity);
 
@@ -278,7 +288,7 @@ public class AuthServiceImpl implements AuthService {
         Role role = authentication.getAuthorities().stream().findFirst().get().getAuthority().equals("ROLE_ADMIN") ? Role.ADMIN :
                 authentication.getAuthorities().stream().findFirst().get().getAuthority().equals("ROLE_DOCTOR") ? Role.DOCTOR : Role.PATIENT;
 
-        UserEntity userEntity = userRepository.findByEmail(email)
+        UserEntity userEntity = userRepository.findByEmailAndStatus(email, UserStatus.ACTIVE)
                 .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         UserResponse userResponse = modelMapper.map(userEntity, UserResponse.class);
@@ -312,7 +322,7 @@ public class AuthServiceImpl implements AuthService {
 
     public GlobalResponse logoutUser(String userEmail) {
 
-        UserEntity user = userRepository.findByEmail(userEmail)
+        UserEntity user = userRepository.findByEmailAndStatus(userEmail, UserStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         refreshTokenRepository.deleteByUserId(user.getId());

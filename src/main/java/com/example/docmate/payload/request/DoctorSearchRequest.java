@@ -1,4 +1,4 @@
-package com.example.docmate.global.response;
+package com.example.docmate.payload.request;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -7,17 +7,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Map;
-
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class GlobalResponse {
-    private boolean status;
-    private String message;
-    private Object data;
-    private Map<String, String> validationErrMap;
+public class DoctorSearchRequest {
+    private String specialization;
+    private String province;
 }

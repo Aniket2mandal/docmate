@@ -88,4 +88,6 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
     );
     Optional<AppointmentEntity> findByDoctorScheduleId(String doctorScheduleId);
 
+    Optional<AppointmentEntity> findAppointmentByPatientIdAndStatus(String patientId, AppointmentStatus status);
+
 }

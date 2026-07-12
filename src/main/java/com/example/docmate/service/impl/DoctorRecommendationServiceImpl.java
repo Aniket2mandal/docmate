@@ -166,12 +166,18 @@ public class DoctorRecommendationServiceImpl implements DoctorRecommendationServ
     }
 
     private double calculateRatingScore(double rating, int ratingCount) {
+        double priorRating = 3.5;
+        double priorWeight = 5.0;   
 
         if (ratingCount <= 0) {
-            return 3.5 / 5.0;
+            return priorRating / 5.0;
         }
 
-        return Math.min(rating / 5.0, 1.0);
+        double bayesianRating =
+                ((rating * ratingCount) + (priorRating * priorWeight))
+                        / (ratingCount + priorWeight);
+
+        return Math.min(bayesianRating / 5.0, 1.0);
     }
 
     private double calculateExperienceScore(double experience) {
@@ -189,6 +195,7 @@ public class DoctorRecommendationServiceImpl implements DoctorRecommendationServ
             List<String> normalizedSpecializations
     ) {
 
+
         if (doctor.getSpecialization() == null) {
             return 0;
         }
@@ -197,12 +204,19 @@ public class DoctorRecommendationServiceImpl implements DoctorRecommendationServ
                 .trim()
                 .toLowerCase();
 
+        int index = normalizedSpecializations.indexOf(doctorSpecialization);
 
-//        AI predicted = cardiologist
-//          Doctor specialization = cardiologist
-//        specializationScore = 1.0
+        if (index == -1) {
+            return 0;
+        }
 
-        return normalizedSpecializations.contains(doctorSpecialization) ? 1.0 : 0.0;
+        // Top match = 1.0, each subsequent hedge/fallback specialization scores lower
+        if (index == 0) {
+            return 1.0;
+        } else {
+            return Math.max(0.6 - (0.1 * (index - 1)), 0.3);
+            // index 1 -> 0.6, index 2 -> 0.5, etc., floor at 0.3
+        }
     }
 
     private double roundTwoDecimal(double value) {

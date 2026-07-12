@@ -2,6 +2,7 @@ package com.example.docmate.service.impl;
 
 import com.example.docmate.entity.RefreshTokenEntity;
 import com.example.docmate.entity.UserEntity;
+import com.example.docmate.enums.UserStatus;
 import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
@@ -32,7 +33,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
 
     public void createRefreshToken(String userEmail,String refreshToken) {
-        UserEntity userEntity = userRepository.findByEmail(userEmail)
+        UserEntity userEntity = userRepository.findByEmailAndStatus(userEmail, UserStatus.ACTIVE)
                 .orElseThrow(() -> new GlobalException("User "+ MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         refreshTokenRepository.deleteByUserId(userEntity.getId());
@@ -71,7 +72,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
         String email = jwtUtils.extractUsername(refreshToken);
 
-        UserEntity userEntity = userRepository.findByEmail(email)
+        UserEntity userEntity = userRepository.findByEmailAndStatus(email, UserStatus.ACTIVE)
                 .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         String newAccessToken = jwtUtils.generateAccessToken(userEntity.getEmail(), userEntity.getRole().getName(), userEntity.getId());

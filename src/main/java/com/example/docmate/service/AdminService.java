@@ -5,10 +5,15 @@ import com.example.docmate.enums.Role;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.payload.request.RoleRequest;
 import com.example.docmate.payload.request.UserRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
 public interface AdminService {
     GlobalResponse createRole( RoleRequest role);
     GlobalResponse getAllRole();
     GlobalResponse changeStatus(UserRequest user, String userId);
+    GlobalResponse getDoctorRequests(Pageable pageable);
+    GlobalResponse approveDoctorRequest(String doctorRequestId);
+    GlobalResponse getDoctorRequest(String doctorRequestId);
+    GlobalResponse rejectDoctorRequest(String doctorRequestId,String reason);
 }
