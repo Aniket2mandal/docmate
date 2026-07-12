@@ -446,9 +446,19 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     public GlobalResponse searchDoctor(DoctorSearchRequest doctorRequest, Pageable pageable) {
 
+        String specialization =doctorRequest.getSpecialization();
+        String province = doctorRequest.getProvince();
+        if ( specialization != null && specialization.trim().isEmpty()) {
+            specialization = null;
+        }
+
+        if (province != null && province.trim().isEmpty()) {
+            province = null;
+        }
+
         Page<DoctorEntity> doctorEntities =
-                doctorRepository.findActiveDoctorsBySpecializationAndProvince(doctorRequest.getSpecialization(),
-                        UserStatus.ACTIVE, doctorRequest.getProvince(), pageable);
+                doctorRepository.findActiveDoctorsBySpecializationAndProvince(specialization,
+                        UserStatus.ACTIVE, province, pageable);
 
         List<DoctorResponse> doctorResponseList = doctorEntities.getContent().stream()
                 .map(
