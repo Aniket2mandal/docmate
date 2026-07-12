@@ -15,7 +15,7 @@ import java.util.Date;
 @Component
 public class JwtUtils {
     //this is utils class.
-    @Value("${jwt.secret:mySecretKeyForJWTTokenGenerationThatShouldBeAtLeast256BitsLongForHS256Algorithm}")
+    @Value("${jwt.secret}")
     private String secret;
 
 //    Token expires in 24 hours
