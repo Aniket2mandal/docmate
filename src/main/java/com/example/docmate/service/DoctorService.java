@@ -23,9 +23,9 @@ public interface DoctorService {
 
     GlobalResponse createDoctorSchedule(DoctorScheduleRequest scheduleRequest);
 
-    GlobalResponse getAllSchedule(String doctorId);
+    GlobalResponse getAllSchedule(String doctorId, Pageable pageable);
 
-    GlobalResponse getAvailableSlots(String doctorId);
+    GlobalResponse getAvailableSlots(String doctorId, Pageable pageable);
 
     GlobalResponse getDoctorDetails(String doctorId);
 
