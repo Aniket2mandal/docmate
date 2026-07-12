@@ -156,7 +156,6 @@ public class DoctorRecommendationServiceImpl implements DoctorRecommendationServ
         return specializations.stream()
                 .filter(this::hasText)
                 .map(String::trim)
-                .map(String::toLowerCase)
                 .distinct()
                 .toList();
     }
