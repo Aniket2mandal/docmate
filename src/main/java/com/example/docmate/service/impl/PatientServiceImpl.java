@@ -10,6 +10,8 @@ import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
 import com.example.docmate.payload.request.RatingRequest;
+import com.example.docmate.payload.response.CommonPageResponse;
+import com.example.docmate.payload.response.DoctorRequestResponse;
 import com.example.docmate.payload.response.PatientResponse;
 import com.example.docmate.payload.response.RoleResponse;
 import com.example.docmate.payload.response.UserResponse;
@@ -18,10 +20,13 @@ import com.example.docmate.repository.DoctorRatingRepository;
 import com.example.docmate.repository.DoctorRepository;
 import com.example.docmate.repository.PatientRepository;
 import com.example.docmate.service.PatientService;
+import com.example.docmate.utils.CommonMethods;
 import com.example.docmate.utils.MyConstants;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.boot.security.autoconfigure.SecurityProperties;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -39,8 +44,8 @@ public class PatientServiceImpl implements PatientService {
     private final DoctorRepository doctorRepository;
 
     @Override
-    public GlobalResponse getAllPatient() {
-        List<PatientEntity> patientEntityList = patientRepository.findAllActivePatients();
+    public GlobalResponse getAllPatient(Pageable pageable) {
+        Page<PatientEntity> patientEntityList = patientRepository.findAllActivePatients(pageable);
 
         List<PatientResponse> patientResponseList = patientEntityList.stream()
                 .map(patient -> {
@@ -57,7 +62,11 @@ public class PatientServiceImpl implements PatientService {
                     return patientResponse;
                 }).toList();
 
-        return GlobalResponseBuilder.buildSuccessResponseWithData("All patient fetched", patientResponseList);
+        CommonPageResponse<PatientResponse> response = new CommonPageResponse<>();
+        response.setPaginationInfo(CommonMethods.getPaginationInfo(patientEntityList));
+        response.setData(patientResponseList);
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("All patient fetched", response);
     }
 
     @Override

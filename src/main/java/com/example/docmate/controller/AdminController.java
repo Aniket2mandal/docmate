@@ -104,8 +104,11 @@ public class AdminController {
     }
 
     @GetMapping("/get-all-patient")
-    public ResponseEntity<GlobalResponse> getAllPatient() {
-        return ResponseEntity.ok(patientService.getAllPatient());
+    public ResponseEntity<GlobalResponse> getAllPatient(@RequestParam(defaultValue = "0") int page,
+                                                        @RequestParam(defaultValue = "9") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(patientService.getAllPatient(pageable));
     }
 
     @DeleteMapping("/delete-patient/{patientId}")
