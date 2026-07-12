@@ -32,9 +32,9 @@ public interface DoctorRepository extends JpaRepository<DoctorEntity, String> {
     @Query("SELECT d " +
             "FROM DoctorEntity d " +
             "JOIN FETCH d.user u " +
-            "WHERE d.specialization = :specialization " +
+            "WHERE (:specialization IS NULL OR d.specialization = :specialization) " +
             "AND u.status = :status " +
-            "AND u.province = :province " )
+            "AND (:province IS NULL OR u.province = :province) ")
     Page<DoctorEntity> findActiveDoctorsBySpecializationAndProvince(
             String specialization,
             UserStatus status,
