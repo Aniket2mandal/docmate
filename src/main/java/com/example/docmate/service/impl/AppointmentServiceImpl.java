@@ -164,7 +164,7 @@ public class AppointmentServiceImpl implements AppointmentService {
             mailService.sendMail(email, subject, body);
         } catch (Exception e) {
             log.error("Failed to send email to {}", email, e);
-        };d
+        };
 
         return GlobalResponseBuilder.buildSuccessResponse("Appointment booked successfully");
     }
