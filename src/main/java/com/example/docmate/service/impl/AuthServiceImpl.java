@@ -128,6 +128,7 @@ public class AuthServiceImpl implements AuthService {
                     .gender(patient.getUser().getGender())
                     .phone(patient.getUser().getPhone())
                     .address(patient.getUser().getAddress())
+                    .province(patient.getUser().getProvince())
                     .role(roleEntity)
                     .build();
 
