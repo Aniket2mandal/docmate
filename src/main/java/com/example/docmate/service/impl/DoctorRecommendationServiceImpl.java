@@ -36,6 +36,9 @@ public class DoctorRecommendationServiceImpl implements DoctorRecommendationServ
     @Value("${docmate.ai.low-confidence-limit:0.60}")
     private double lowConfidenceLimit;
 
+    @Value("${docmate.ai.no-rating-penalty-floor:0.85}")
+    private double noRatingPenaltyFloor;
+
     private static final int SEARCH_DAYS = 7;
 
     private final AiRecommendationClientImpl aiRecommendationClient;
@@ -118,14 +121,20 @@ public class DoctorRecommendationServiceImpl implements DoctorRecommendationServ
                             normalizedSpecializations
                     );
 
+                    double confidence = calculateRatingConfidence(doctor.getRatingCount());
+
 //                    using Weighted Scoring Algorithm / MCDM.
+
+
 
                     //combining multiple criteria:Rating,Experience,Specialization match
 //                   Each one has a weight:Rating = 35%,Experience = 25%,Specialization = 25%
 
 //                  ratingScore contributes 35% ,experienceScore contributes 25% .specializationScore contributes 25%
-                    double finalScore = ((0.35 * ratingScore) + (0.25 * experienceScore) + (0.25 * specializationScore)) * 10;
+                    double baseScore = (0.35 * ratingScore) + (0.25 * experienceScore) + (0.25 * specializationScore);
+                    double confidencePenalty = noRatingPenaltyFloor + ((1.0 - noRatingPenaltyFloor) * confidence);
 
+                    double finalScore = (baseScore / 0.85) * confidencePenalty * 10;
 
                     DoctorResponse doctorResponse = modelMapper.map(doctor, DoctorResponse.class);
                     doctorResponse.setDoctorId(doctor.getId());
@@ -220,6 +229,12 @@ public class DoctorRecommendationServiceImpl implements DoctorRecommendationServ
 
     private double roundTwoDecimal(double value) {
         return Math.round(value * 100.0) / 100.0;
+    }
+
+    private double calculateRatingConfidence(int ratingCount) {
+        // 0 reviews -> low confidence, ramps up quickly, caps at 1.0
+        // e.g. 5 reviews = 0.5 confidence, 15+ reviews = full confidence
+        return Math.min(ratingCount / 15.0, 1.0);
     }
 
 }
