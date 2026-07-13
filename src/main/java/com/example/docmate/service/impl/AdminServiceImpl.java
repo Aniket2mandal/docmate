@@ -25,6 +25,7 @@ import com.example.docmate.repository.DoctorRequestRepository;
 import com.example.docmate.repository.RoleRepository;
 import com.example.docmate.repository.UserRepository;
 import com.example.docmate.service.AdminService;
+import com.example.docmate.service.MailService;
 import com.example.docmate.utils.CommonMethods;
 import com.example.docmate.utils.MyConstants;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
+    private final MailService mailService;
     private final ModelMapper modelMapper;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
@@ -202,6 +204,14 @@ public class AdminServiceImpl implements AdminService {
 
         commonMethods.deleteSubFolder("doctor-document-request",doctorRequestEntity.getId());
 
+        String email= userEntity.getEmail();
+        String subject = "Doctor request approved";
+        String body="Dear " + userEntity.getFirstName() + ",\n\n"
+                + "Congratulations! You have been officially appointed as a doctor on the Docmate platform.\n\n"
+                + "Welcome aboard,\n"
+                + "The Docmate Team";
+        mailService.sendMail(email,subject,body);
+
         return GlobalResponseBuilder.buildSuccessResponse("Doctor approved successfully");
     }
 
@@ -224,6 +234,19 @@ public class AdminServiceImpl implements AdminService {
         commonMethods.deleteFiles(doctorRequestEntity.getEducationCertificatePublicId());
 
         commonMethods.deleteSubFolder("doctor-document-request",doctorRequestEntity.getId());
+
+        String email= doctorRequestEntity.getEmail();
+        String subject = "Doctor request approved";
+
+
+        String body = "Dear " + doctorRequestEntity.getFirstName() + ",\n\n"
+                + "Thank you for applying to join Docmate as a doctor. "
+                + "After review, we are unable to approve your request at this time.\n\n"
+                + "Reason: " + reason + "\n\n"
+                + "Regards,\n"
+                + "The Docmate Team";
+
+        mailService.sendMail(email,subject,body);
 
         return  GlobalResponseBuilder.buildSuccessResponse("Doctor request rejected !");
     }
