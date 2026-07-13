@@ -204,13 +204,7 @@ public class AdminServiceImpl implements AdminService {
 
         commonMethods.deleteSubFolder("doctor-document-request",doctorRequestEntity.getId());
 
-        String email= userEntity.getEmail();
-        String subject = "Doctor request approved";
-        String body="Dear " + userEntity.getFirstName() + ",\n\n"
-                + "Congratulations! You have been officially appointed as a doctor on the Docmate platform.\n\n"
-                + "Welcome aboard,\n"
-                + "The Docmate Team";
-        mailService.sendMail(email,subject,body);
+//        git
 
         return GlobalResponseBuilder.buildSuccessResponse("Doctor approved successfully");
     }
@@ -239,14 +233,14 @@ public class AdminServiceImpl implements AdminService {
         String subject = "Doctor request approved";
 
 
-        String body = "Dear " + doctorRequestEntity.getFirstName() + ",\n\n"
-                + "Thank you for applying to join Docmate as a doctor. "
-                + "After review, we are unable to approve your request at this time.\n\n"
-                + "Reason: " + reason + "\n\n"
-                + "Regards,\n"
-                + "The Docmate Team";
-
-        mailService.sendMail(email,subject,body);
+//        String body = "Dear " + doctorRequestEntity.getFirstName() + ",\n\n"
+//                + "Thank you for applying to join Docmate as a doctor. "
+//                + "After review, we are unable to approve your request at this time.\n\n"
+//                + "Reason: " + reason + "\n\n"
+//                + "Regards,\n"
+//                + "The Docmate Team";
+//
+//        mailService.sendMail(email,subject,body);
 
         return  GlobalResponseBuilder.buildSuccessResponse("Doctor request rejected !");
     }
