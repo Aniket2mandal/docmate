@@ -28,6 +28,8 @@ import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -47,6 +49,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final ModelMapper modelMapper;
     private final CommonMethods commonMethods;
     private final UserRepository userRepository;
+
+    private static final Logger log = LoggerFactory.getLogger(AppointmentServiceImpl.class);
 
     @Override
     public GlobalResponse bookAppointment(AppointmentRequest appointmentRequest) {
@@ -156,7 +160,11 @@ public class AppointmentServiceImpl implements AppointmentService {
                 + "Regards,\n"
                 + "The Docmate Team";
 
-        mailService.sendMail(email,subject,body);
+        try {
+            mailService.sendMail(email, subject, body);
+        } catch (Exception e) {
+            log.error("Failed to send email to {}", email, e);
+        };d
 
         return GlobalResponseBuilder.buildSuccessResponse("Appointment booked successfully");
     }
