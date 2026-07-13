@@ -20,12 +20,14 @@ import com.example.docmate.repository.DoctorScheduleRepository;
 import com.example.docmate.repository.PatientRepository;
 import com.example.docmate.repository.UserRepository;
 import com.example.docmate.service.AppointmentService;
+import com.example.docmate.service.MailService;
 import com.example.docmate.utils.CommonMethods;
 import com.example.docmate.utils.MyConstants;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -37,6 +39,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AppointmentServiceImpl implements AppointmentService {
 
+    private final MailService mailService;
     private final DoctorRepository doctorRepository;
     private final DoctorScheduleRepository doctorScheduleRepository;
     private final PatientRepository patientRepository;
@@ -47,7 +50,6 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public GlobalResponse bookAppointment(AppointmentRequest appointmentRequest) {
-
 
         String email = commonMethods.getAuthenticatedUserEmail();
 
@@ -144,6 +146,12 @@ public class AppointmentServiceImpl implements AppointmentService {
             doctorScheduleEntity.setAvailable(ScheduleAvailabilityStatus.BOOKED);
             doctorScheduleRepository.save(doctorScheduleEntity);
         }
+
+
+        String subject = "Appointment booked";
+        String body="Hello " +userEntity.getFirstName()
+                +" your appointment have been booked " + "Date time: " +appointmentDate + ":"+appointmentTime;
+        mailService.sendMail(email,subject,body);
 
         return GlobalResponseBuilder.buildSuccessResponse("Appointment booked successfully");
     }
