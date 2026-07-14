@@ -15,7 +15,7 @@ public interface AuthService {
     GlobalResponse uploadUserImage(String userId, MultipartFile file);
     GlobalResponse getUserProfile();
     GlobalResponse logoutUser(String userEmail);
-    GlobalResponse sendOtp(String email);
+    GlobalResponse sendOtp(ForgotPasswordRequest request);
     GlobalResponse verifyOtp(ForgotPasswordRequest request);
     GlobalResponse updatePassword(ForgotPasswordRequest request);
 }
