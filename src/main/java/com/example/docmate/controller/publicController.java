@@ -76,8 +76,8 @@ public class publicController {
     }
 
     @PostMapping("/otp-creator")
-    public ResponseEntity<GlobalResponse> sendOtp(ForgotPasswordRequest request){
-        return ResponseEntity.ok(authService.sendOtp(request.getEmail()));
+    public ResponseEntity<GlobalResponse> sendOtp(@RequestBody ForgotPasswordRequest request){
+        return ResponseEntity.ok(authService.sendOtp(request));
     }
 
     @PostMapping("/verify-otp")

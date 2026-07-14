@@ -262,10 +262,14 @@ public class AppointmentServiceImpl implements AppointmentService {
             UserResponse userResponse = modelMapper.map(appointmentEntity.getDoctor().getUser(), UserResponse.class);
             doctorResponse.setUser(userResponse);
         }
+
+        PatientResponse patientResponse = modelMapper.map(appointmentEntity.getPatient(), PatientResponse.class);
+
         doctorResponse.setDoctorId(appointmentEntity.getDoctor().getId());
         appointmentResponse.setAppointmentDate(appointmentEntity.getAppointmentDate());
         appointmentResponse.setAppointmentTime(appointmentEntity.getAppointmentTime());
         appointmentResponse.setDoctor(doctorResponse);
+        appointmentResponse.setPatient(patientResponse);
         return GlobalResponseBuilder.buildSuccessResponseWithData("Appointment details fetched successfully ", appointmentResponse);
     }
 
