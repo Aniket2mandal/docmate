@@ -344,8 +344,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public GlobalResponse sendOtp(String email) {
-        UserEntity user = userRepository.findByEmailAndStatus(email, UserStatus.ACTIVE)
+    public GlobalResponse sendOtp(ForgotPasswordRequest request) {
+        UserEntity user = userRepository.findByEmailAndStatus(request.getEmail(), UserStatus.ACTIVE)
                 .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
         String otp = CommonMethods.generateOtp();
 
@@ -359,9 +359,9 @@ public class AuthServiceImpl implements AuthService {
                 + "<p>Regards,<br>The DocMate Team</p>";
 
         try {
-            mailService.sendMail(email, subject, body);
+            mailService.sendMail(request.getEmail(), subject, body);
         } catch (Exception e) {
-            log.error("Failed to send email to {}", email, e);
+            log.error("Failed to send email to {}", request.getEmail(), e);
             throw new GlobalException("Failed to send OTP email.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 

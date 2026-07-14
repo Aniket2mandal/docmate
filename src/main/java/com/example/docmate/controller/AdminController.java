@@ -140,4 +140,9 @@ public class AdminController {
         return ResponseEntity.ok(adminService.rejectDoctorRequest(doctorRequestId,reason));
     }
 
+//    @GetMapping("/get-all-users")
+//    public ResponseEntity<GlobalResponse> getAllUsers() {
+//        return ResponseEntity
+//    }
+
 }
