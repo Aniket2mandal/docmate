@@ -81,7 +81,7 @@ public class publicController {
     }
 
     @PostMapping("/verify-otp")
-    public ResponseEntity<GlobalResponse> verifyOtp(ForgotPasswordRequest request){
+    public ResponseEntity<GlobalResponse> verifyOtp(@RequestBody ForgotPasswordRequest request){
         return ResponseEntity.ok(authService.verifyOtp(request));
     }
 
