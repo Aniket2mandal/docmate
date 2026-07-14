@@ -27,12 +27,15 @@ import com.example.docmate.repository.MedicationRepository;
 import com.example.docmate.repository.PatientRepository;
 import com.example.docmate.repository.TestReportRepository;
 import com.example.docmate.repository.UserRepository;
+import com.example.docmate.service.MailService;
 import com.example.docmate.service.MedicalRecordService;
 import com.example.docmate.utils.CommonMethods;
 import com.example.docmate.utils.MyConstants;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -50,6 +53,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class MedicalRecordServiceImpl implements MedicalRecordService {
 
+    private final MailService mailService;
     private final AppointmentRepository appointmentRepository;
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
@@ -60,6 +64,8 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
     private final UserRepository userRepository;
     private final Cloudinary cloudinary;
     private final CommonMethods commonMethods;
+
+    private static final Logger log = LoggerFactory.getLogger(AppointmentServiceImpl.class);
 
     @Override
     public GlobalResponse createMedicalRecord(MedicalRecordRequest medicalRecordRequest, MultipartFile[] testReports) {
@@ -99,6 +105,23 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
 
         if (testReports != null && testReports.length > 0) {
             handleTestReports(testReports, medicalRecordEntity);
+        }
+
+        if(patientEntity != null) {
+            UserEntity userEntity = patientEntity.getUser();
+            String subject = "Medical Record Created";
+
+            String body = "<p>Dear " + userEntity.getFirstName() + ",</p>"
+                    + "<p>Your medical record has been successfully created and is now available in your DocMate account.</p>"
+                    + "<p>You can log in to view your diagnosis, prescriptions, and other medical details.</p>"
+                    + "<p>Thank you for choosing DocMate.</p>"
+                    + "<p>Regards,<br>The DocMate Team</p>";
+
+            try {
+                mailService.sendMail(userEntity.getEmail(), subject, body);
+            } catch (Exception e) {
+                log.error("Failed to send email to {}", userEntity.getEmail(), e);
+            }
         }
 
         return GlobalResponseBuilder.buildSuccessResponse("Medical record created successfully");

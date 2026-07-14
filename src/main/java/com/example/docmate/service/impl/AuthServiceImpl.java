@@ -3,6 +3,7 @@ package com.example.docmate.service.impl;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.docmate.entity.DoctorEntity;
+import com.example.docmate.entity.PasswordResetOtpEntity;
 import com.example.docmate.entity.PatientEntity;
 import com.example.docmate.entity.RefreshTokenEntity;
 import com.example.docmate.entity.RoleEntity;
@@ -12,6 +13,7 @@ import com.example.docmate.enums.UserStatus;
 import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
+import com.example.docmate.payload.request.ForgotPasswordRequest;
 import com.example.docmate.payload.request.LoginRequest;
 import com.example.docmate.payload.request.PatientRequest;
 import com.example.docmate.payload.request.UserRequest;
@@ -21,11 +23,13 @@ import com.example.docmate.payload.response.LoginResponse;
 import com.example.docmate.payload.response.PatientResponse;
 import com.example.docmate.payload.response.UserResponse;
 import com.example.docmate.repository.DoctorRepository;
+import com.example.docmate.repository.PasswordResetOtpRepository;
 import com.example.docmate.repository.PatientRepository;
 import com.example.docmate.repository.RefreshTokenRepository;
 import com.example.docmate.repository.RoleRepository;
 import com.example.docmate.repository.UserRepository;
 import com.example.docmate.service.AuthService;
+import com.example.docmate.service.MailService;
 import com.example.docmate.service.RefreshTokenService;
 import com.example.docmate.utils.CommonMethods;
 import com.example.docmate.utils.JwtUtils;
@@ -34,6 +38,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.catalina.User;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -48,9 +54,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.hibernate.annotations.UuidGenerator.Style.RANDOM;
 import static org.springframework.boot.autoconfigure.container.ContainerImageMetadata.isPresent;
 import static org.springframework.util.ObjectUtils.isEmpty;
 
@@ -59,6 +67,7 @@ import static org.springframework.util.ObjectUtils.isEmpty;
 @Transactional
 public class AuthServiceImpl implements AuthService {
 
+    private final MailService mailService;
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -71,6 +80,9 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenService refreshTokenService;
     private final Cloudinary cloudinary;
     private final CommonMethods commonMethods;
+
+    private static final Logger log = LoggerFactory.getLogger(AppointmentServiceImpl.class);
+    private final PasswordResetOtpRepository passwordResetOtpRepository;
 
     public GlobalResponse registerAdmin(UserRequest user) {
 
@@ -324,10 +336,92 @@ public class AuthServiceImpl implements AuthService {
     public GlobalResponse logoutUser(String userEmail) {
 
         UserEntity user = userRepository.findByEmailAndStatus(userEmail, UserStatus.ACTIVE)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new GlobalException("User "+ MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         refreshTokenRepository.deleteByUserId(user.getId());
 
         return GlobalResponseBuilder.buildSuccessResponse("User logged out successfully");
+    }
+
+    @Override
+    public GlobalResponse sendOtp(String email) {
+        UserEntity user = userRepository.findByEmailAndStatus(email, UserStatus.ACTIVE)
+                .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+        String otp = CommonMethods.generateOtp();
+
+        String subject = "Reset Password OTP";
+
+        String body = "<p>Dear," + user.getFirstName() + "</p>"
+                + "<p>Your One-Time Password (OTP) for resetting your password is:</p>"
+                + "<p><b style='font-size:20px;'>" + otp + "</b></p>"
+                + "<p>This OTP is valid for 1 minute. Please do not share it with anyone.</p>"
+                + "<p>If you did not request a password reset, you can safely ignore this email.</p>"
+                + "<p>Regards,<br>The DocMate Team</p>";
+
+        try {
+            mailService.sendMail(email, subject, body);
+        } catch (Exception e) {
+            log.error("Failed to send email to {}", email, e);
+            throw new GlobalException("Failed to send OTP email.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        PasswordResetOtpEntity passwordResetOtpEntity = new PasswordResetOtpEntity();
+        passwordResetOtpEntity.setOtp(otp);
+        passwordResetOtpEntity.setUserId(user.getId());
+        passwordResetOtpEntity.setExpiryTime(LocalDateTime.now().plusMinutes(1));
+        passwordResetOtpRepository.save(passwordResetOtpEntity);
+
+        return GlobalResponseBuilder.buildSuccessResponse("OTP sent successfully");
+
+    }
+
+    @Override
+    public GlobalResponse verifyOtp(ForgotPasswordRequest request){
+        UserEntity user = userRepository.findByEmailAndStatus(request.getEmail(), UserStatus.ACTIVE)
+                .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        PasswordResetOtpEntity passwordResetOtpEntity = passwordResetOtpRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new GlobalException("otp " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        if (!request.getOtp().equals(passwordResetOtpEntity.getOtp())) {
+            throw new GlobalException("Invalid OTP", HttpStatus.BAD_REQUEST);
+        }
+
+        if (passwordResetOtpEntity.getExpiryTime().isBefore(LocalDateTime.now())) {
+            throw new GlobalException("OTP has expired", HttpStatus.BAD_REQUEST);
+        }
+
+        passwordResetOtpEntity.setIsVerified(true);
+        passwordResetOtpRepository.save(passwordResetOtpEntity);
+
+        return GlobalResponseBuilder.buildSuccessResponse("OTP verified!");
+    }
+
+    @Override
+    public GlobalResponse updatePassword(ForgotPasswordRequest request){
+        UserEntity user = userRepository.findByEmailAndStatus(request.getEmail(), UserStatus.ACTIVE)
+                .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        PasswordResetOtpEntity passwordResetOtpEntity = passwordResetOtpRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new GlobalException("otp " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        if (passwordResetOtpEntity.getExpiryTime().isBefore(LocalDateTime.now())) {
+            throw new GlobalException("OTP has expired", HttpStatus.BAD_REQUEST);
+        }
+
+        if(!passwordResetOtpEntity.getIsVerified()){
+            throw new GlobalException("OTP is not verified", HttpStatus.BAD_REQUEST);
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new GlobalException(MyConstants.ERR_MSG_NEW_PASSWORD, HttpStatus.BAD_REQUEST);
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        passwordResetOtpRepository.delete(passwordResetOtpEntity);
+
+        return GlobalResponseBuilder.buildSuccessResponse("Password Changed!");
     }
 }

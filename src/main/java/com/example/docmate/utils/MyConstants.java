@@ -14,4 +14,5 @@ public class MyConstants {
     public static final String ERR_MSG_CANNOT_BE_NULL = ": Cannot be null";
     public static final String ERR_MSG_NOT_AVAILABLE = " : Not available: ";
     public static final String ERR_MSG_UNAUTHORIZED = ": Unauthorized";
+    public static final String ERR_MSG_NEW_PASSWORD = "New password cannot be same as old password";
 }
