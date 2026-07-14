@@ -17,13 +17,17 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.net.URL;
+import java.security.SecureRandom;
 import java.util.Map;
+
+import static org.hibernate.annotations.UuidGenerator.Style.RANDOM;
 
 @Component
 @RequiredArgsConstructor
 public class CommonMethods {
 
     private final Cloudinary cloudinary;
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     public String getAuthenticatedUserEmail() {
 
@@ -180,6 +184,10 @@ public class CommonMethods {
                     HttpStatus.INTERNAL_SERVER_ERROR
             );
         }
+    }
+
+    public static String generateOtp() {
+        return String.format("%04d", RANDOM.nextInt(10000));
     }
 
 }

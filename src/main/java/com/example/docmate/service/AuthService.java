@@ -1,6 +1,7 @@
 package com.example.docmate.service;
 
 import com.example.docmate.global.response.GlobalResponse;
+import com.example.docmate.payload.request.ForgotPasswordRequest;
 import com.example.docmate.payload.request.LoginRequest;
 import com.example.docmate.payload.request.PatientRequest;
 import com.example.docmate.payload.request.UserRequest;
@@ -14,4 +15,7 @@ public interface AuthService {
     GlobalResponse uploadUserImage(String userId, MultipartFile file);
     GlobalResponse getUserProfile();
     GlobalResponse logoutUser(String userEmail);
+    GlobalResponse sendOtp(String email);
+    GlobalResponse verifyOtp(ForgotPasswordRequest request);
+    GlobalResponse updatePassword(ForgotPasswordRequest request);
 }
