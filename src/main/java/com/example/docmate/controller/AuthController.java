@@ -1,6 +1,7 @@
 package com.example.docmate.controller;
 
 import com.example.docmate.global.response.GlobalResponse;
+import com.example.docmate.payload.request.ForgotPasswordRequest;
 import com.example.docmate.payload.request.LoginRequest;
 import com.example.docmate.payload.request.PatientRequest;
 import com.example.docmate.payload.request.UserRequest;
@@ -54,7 +55,7 @@ public class AuthController {
         return ResponseEntity.ok(authService.loginUser(loginRequest));
      }
 
-    // ✅ Client calls this when access token expires
+    //  Client calls this when access token expires
     @PostMapping("/refresh")
     public ResponseEntity<GlobalResponse> refresh(@RequestBody String refreshToken) {
         return ResponseEntity.ok(  refreshTokenService.rotateAccessToken(refreshToken));
@@ -71,4 +72,19 @@ public class AuthController {
          String userEmail=commonMethods.getAuthenticatedUserEmail();
         return ResponseEntity.ok(authService.logoutUser(userEmail));
      }
+
+     @PostMapping("/otp-creator")
+     public ResponseEntity<GlobalResponse> sendOtp(ForgotPasswordRequest request){
+         return ResponseEntity.ok(authService.sendOtp(request.getEmail()));
+     }
+
+     @PostMapping("/verify-otp")
+     public ResponseEntity<GlobalResponse> verifyOtp(ForgotPasswordRequest request){
+        return ResponseEntity.ok(authService.verifyOtp(request));
+     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<GlobalResponse> updatePassword(@RequestBody ForgotPasswordRequest request) {
+        return ResponseEntity.ok(authService.updatePassword(request));
+    }
 }
