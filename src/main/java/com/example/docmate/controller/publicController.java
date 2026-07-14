@@ -3,6 +3,8 @@ package com.example.docmate.controller;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.payload.request.DoctorRequest;
 import com.example.docmate.payload.request.DoctorSearchRequest;
+import com.example.docmate.payload.request.ForgotPasswordRequest;
+import com.example.docmate.service.AuthService;
 import com.example.docmate.service.DoctorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class publicController {
 
     private final DoctorService doctorService;
+    private final AuthService authService;
 
     @GetMapping("/get-all-doctor")
     public ResponseEntity<GlobalResponse> getAllDoctor(@RequestParam(defaultValue = "0") int page,
@@ -70,5 +73,20 @@ public class publicController {
     ) {
         return ResponseEntity.ok(doctorService.ApplyForDoctor(doctorRequest,
                 citizenshipFront, citizenshipBack, doctorLicense, educationCertificate));
+    }
+
+    @PostMapping("/otp-creator")
+    public ResponseEntity<GlobalResponse> sendOtp(ForgotPasswordRequest request){
+        return ResponseEntity.ok(authService.sendOtp(request.getEmail()));
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<GlobalResponse> verifyOtp(ForgotPasswordRequest request){
+        return ResponseEntity.ok(authService.verifyOtp(request));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<GlobalResponse> updatePassword(@RequestBody ForgotPasswordRequest request) {
+        return ResponseEntity.ok(authService.updatePassword(request));
     }
 }

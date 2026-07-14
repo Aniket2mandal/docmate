@@ -72,19 +72,4 @@ public class AuthController {
          String userEmail=commonMethods.getAuthenticatedUserEmail();
         return ResponseEntity.ok(authService.logoutUser(userEmail));
      }
-
-     @PostMapping("/otp-creator")
-     public ResponseEntity<GlobalResponse> sendOtp(ForgotPasswordRequest request){
-         return ResponseEntity.ok(authService.sendOtp(request.getEmail()));
-     }
-
-     @PostMapping("/verify-otp")
-     public ResponseEntity<GlobalResponse> verifyOtp(ForgotPasswordRequest request){
-        return ResponseEntity.ok(authService.verifyOtp(request));
-     }
-
-    @PostMapping("/forgot-password")
-    public ResponseEntity<GlobalResponse> updatePassword(@RequestBody ForgotPasswordRequest request) {
-        return ResponseEntity.ok(authService.updatePassword(request));
-    }
 }
