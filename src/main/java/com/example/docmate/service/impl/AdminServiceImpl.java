@@ -30,6 +30,8 @@ import com.example.docmate.utils.CommonMethods;
 import com.example.docmate.utils.MyConstants;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -51,6 +53,7 @@ public class AdminServiceImpl implements AdminService {
     private final CommonMethods commonMethods;
     private final DoctorDocumentsRepository doctorDocumentsRepository;
 
+    private static final Logger log = LoggerFactory.getLogger(AppointmentServiceImpl.class);
 
     public GlobalResponse createRole(RoleRequest role) {
         RoleEntity roleEntity = modelMapper.map(role, RoleEntity.class);
@@ -63,7 +66,7 @@ public class AdminServiceImpl implements AdminService {
         List<RoleResponse> roleResponseList = roleEntityList.stream()
                 .map(role -> modelMapper.map(role, RoleResponse.class))
                 .toList();
-        return GlobalResponseBuilder.buildSuccessResponseWithData("All role fetched",roleResponseList);
+        return GlobalResponseBuilder.buildSuccessResponseWithData("All role fetched", roleResponseList);
     }
 
     @Override
@@ -76,23 +79,23 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public GlobalResponse getDoctorRequests(Pageable pageable){
-        Page<DoctorRequestEntity> doctorRequestEntity =doctorRequestRepository.findByRequestStatus(DoctorRequestStatus.PENDING,pageable);
+    public GlobalResponse getDoctorRequests(Pageable pageable) {
+        Page<DoctorRequestEntity> doctorRequestEntity = doctorRequestRepository.findByRequestStatus(DoctorRequestStatus.PENDING, pageable);
 
         List<DoctorRequestResponse> doctorRequestResponseList = doctorRequestEntity.stream()
-                .map(doctorRequest->modelMapper.map(doctorRequest, DoctorRequestResponse.class))
+                .map(doctorRequest -> modelMapper.map(doctorRequest, DoctorRequestResponse.class))
                 .toList();
 
         CommonPageResponse<DoctorRequestResponse> response = new CommonPageResponse<>();
         response.setPaginationInfo(CommonMethods.getPaginationInfo(doctorRequestEntity));
         response.setData(doctorRequestResponseList);
 
-        return GlobalResponseBuilder.buildSuccessResponseWithData("All doctor requests fetched",response);
+        return GlobalResponseBuilder.buildSuccessResponseWithData("All doctor requests fetched", response);
     }
 
     @Override
-    public GlobalResponse getDoctorRequest(String doctorRequestId){
-        DoctorRequestEntity doctorRequestEntity =doctorRequestRepository.findById(doctorRequestId)
+    public GlobalResponse getDoctorRequest(String doctorRequestId) {
+        DoctorRequestEntity doctorRequestEntity = doctorRequestRepository.findById(doctorRequestId)
                 .orElseThrow(() -> new GlobalException("Request " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         DoctorRequestResponse doctorRequestResponse = modelMapper.map(doctorRequestEntity, DoctorRequestResponse.class);
@@ -101,20 +104,20 @@ public class AdminServiceImpl implements AdminService {
         doctorRequestResponse.setDoctorLicenseUrl(doctorRequestEntity.getDoctorLicense());
         doctorRequestResponse.setEducationCertificateUrl(doctorRequestEntity.getEducationCertificate());
 
-        return GlobalResponseBuilder.buildSuccessResponseWithData(" Doctor request fetched",doctorRequestResponse);
+        return GlobalResponseBuilder.buildSuccessResponseWithData(" Doctor request fetched", doctorRequestResponse);
     }
 
     @Override
-    public GlobalResponse approveDoctorRequest(String doctorRequestId){
+    public GlobalResponse approveDoctorRequest(String doctorRequestId) {
 
-        DoctorRequestEntity doctorRequestEntity =doctorRequestRepository.findById(doctorRequestId)
+        DoctorRequestEntity doctorRequestEntity = doctorRequestRepository.findById(doctorRequestId)
                 .orElseThrow(() -> new GlobalException("Request " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
         doctorRequestEntity.setRequestStatus(DoctorRequestStatus.APPROVED);
 
-        RoleEntity roleEntity=roleRepository.findByName(Role.DOCTOR)
+        RoleEntity roleEntity = roleRepository.findByName(Role.DOCTOR)
                 .orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        UserEntity userEntity=UserEntity.builder()
+        UserEntity userEntity = UserEntity.builder()
                 .firstName(doctorRequestEntity.getFirstName())
                 .lastName(doctorRequestEntity.getLastName())
                 .email(doctorRequestEntity.getEmail())
@@ -127,7 +130,7 @@ public class AdminServiceImpl implements AdminService {
                 .build();
         userRepository.save(userEntity);
 
-        DoctorEntity doctorEntity=DoctorEntity.builder()
+        DoctorEntity doctorEntity = DoctorEntity.builder()
                 .user(userEntity)
                 .specialization(doctorRequestEntity.getSpecialization())
                 .experience(doctorRequestEntity.getExperience())
@@ -197,25 +200,38 @@ public class AdminServiceImpl implements AdminService {
 
         doctorDocumentsRepository.save(documentsEntity);
 
-        String reviewerEmail=commonMethods.getAuthenticatedUserEmail();
+        String reviewerEmail = commonMethods.getAuthenticatedUserEmail();
 
         doctorRequestEntity.setReviewedBy(reviewerEmail);
         doctorRequestRepository.save(doctorRequestEntity);
 
-        commonMethods.deleteSubFolder("doctor-document-request",doctorRequestEntity.getId());
+        commonMethods.deleteSubFolder("doctor-document-request", doctorRequestEntity.getId());
 
-//        git
+        String email=doctorRequestEntity.getEmail();
+        String subject = "Docmate Application Approved";
+        String body = "Dear " + doctorRequestEntity.getFirstName() + ",\n\n"
+                + "Congratulations! Your application to join Docmate as a doctor has been approved.\n\n"
+                + "You can now log in to your Docmate account and start managing your profile, "
+                + "availability, and appointments.\n\n"
+                + "Regards,\n"
+                + "The Docmate Team";
+
+        try {
+            mailService.sendMail(email, subject, body);
+        } catch (Exception e) {
+            log.error("Failed to send email to {}", email, e);
+        }
 
         return GlobalResponseBuilder.buildSuccessResponse("Doctor approved successfully");
     }
 
-    public GlobalResponse rejectDoctorRequest(String doctorRequestId,String reason){
+    public GlobalResponse rejectDoctorRequest(String doctorRequestId, String reason) {
 
-        DoctorRequestEntity doctorRequestEntity =doctorRequestRepository.findById(doctorRequestId)
+        DoctorRequestEntity doctorRequestEntity = doctorRequestRepository.findById(doctorRequestId)
                 .orElseThrow(() -> new GlobalException("Request " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
         doctorRequestEntity.setRequestStatus(DoctorRequestStatus.REJECTED);
 
-        String reviewerEmail=commonMethods.getAuthenticatedUserEmail();
+        String reviewerEmail = commonMethods.getAuthenticatedUserEmail();
 
         doctorRequestEntity.setReviewedBy(reviewerEmail);
         doctorRequestEntity.setRejectionReason(reason);
@@ -227,21 +243,23 @@ public class AdminServiceImpl implements AdminService {
         commonMethods.deleteFiles(doctorRequestEntity.getDoctorLicensePublicId());
         commonMethods.deleteFiles(doctorRequestEntity.getEducationCertificatePublicId());
 
-        commonMethods.deleteSubFolder("doctor-document-request",doctorRequestEntity.getId());
+        commonMethods.deleteSubFolder("doctor-document-request", doctorRequestEntity.getId());
 
-        String email= doctorRequestEntity.getEmail();
-        String subject = "Doctor request approved";
+        String email = doctorRequestEntity.getEmail();
+        String subject = "Docmate Application Update";
+        String body = "Dear " + doctorRequestEntity.getFirstName() + ",\n\n"
+                + "Thank you for applying to join Docmate as a doctor. "
+                + "After review, we are unable to approve your request at this time.\n\n"
+                + "Reason: " + reason + "\n\n"
+                + "Regards,\n"
+                + "The Docmate Team";
 
+        try {
+            mailService.sendMail(email, subject, body);
+        } catch (Exception e) {
+            log.error("Failed to send email to {}", email, e);
+        }
 
-//        String body = "Dear " + doctorRequestEntity.getFirstName() + ",\n\n"
-//                + "Thank you for applying to join Docmate as a doctor. "
-//                + "After review, we are unable to approve your request at this time.\n\n"
-//                + "Reason: " + reason + "\n\n"
-//                + "Regards,\n"
-//                + "The Docmate Team";
-//
-//        mailService.sendMail(email,subject,body);
-
-        return  GlobalResponseBuilder.buildSuccessResponse("Doctor request rejected !");
+        return GlobalResponseBuilder.buildSuccessResponse("Doctor request rejected !");
     }
 }
