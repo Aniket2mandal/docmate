@@ -152,19 +152,18 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
 
 
-        String subject = "Appointment booked";
-        String body = "Dear " + userEntity.getFirstName() + ",\n\n"
-                + "Your appointment has been successfully booked.\n\n"
-                + "Date: " + appointmentDate + "\n"
-                + "Time: " + appointmentTime + "\n\n"
-                + "Regards,\n"
-                + "The Docmate Team";
+        String subject = "Appointment Booked";
+        String body = "<p>Dear " + userEntity.getFirstName() + ",</p>"
+                + "<p>Your appointment has been successfully booked.</p>"
+                + "<p><b>Date:</b> " + appointmentDate + "<br>"
+                + "<b>Time:</b> " + appointmentTime + "</p>"
+                + "<p>Regards,<br>The Docmate Team</p>";
 
-//        try {
-//            mailService.sendMail(email, subject, body);
-//        } catch (Exception e) {
-//            log.error("Failed to send email to {}", email, e);
-//        };
+        try {
+            mailService.sendMail(email, subject, body);
+        } catch (Exception e) {
+            log.error("Failed to send email to {}", email, e);
+        }
 
         return GlobalResponseBuilder.buildSuccessResponse("Appointment booked successfully");
     }
