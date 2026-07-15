@@ -286,7 +286,14 @@ public class AdminServiceImpl implements AdminService {
 
         List<UserResponse> userResponsesList = userEntityPage.stream()
                 .filter(user -> !authenticatedEmail.equals(user.getEmail())) // exclude self
-                .filter(user -> viewerIsSuperAdmin || !user.getRole().getName().equals(Role.SUPER_ADMIN)) // hide superadmin from non-superadmins
+                .filter(user -> {
+                    Role role = user.getRole().getName();
+                    if (viewerIsSuperAdmin) {
+                        return true; // superadmin sees everyone else (already excluded self above)
+                    }
+                    // non-superadmin (i.e., ADMIN) viewers only see non-admin, non-superadmin users
+                    return !role.equals(Role.ADMIN) && !role.equals(Role.SUPER_ADMIN);
+                })
                 .map(user -> {
                     UserResponse userResponse = new UserResponse();
                     userResponse.setId(user.getId());
@@ -316,6 +323,7 @@ public class AdminServiceImpl implements AdminService {
     public GlobalResponse deleteUser(String userId){
         UserEntity userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
         if(userEntity.getRole().getName().equals(Role.PATIENT)) {
             Optional<PatientEntity> patientEntity=patientRepository.findByUserId(userEntity.getId());
             if(patientEntity.isPresent()) {
@@ -330,6 +338,8 @@ public class AdminServiceImpl implements AdminService {
                 doctorService.deleteDoctor(doctorId);
             }
         }
+
+        userRepository.delete(userEntity);
         return GlobalResponseBuilder.buildSuccessResponse("User deleted Successfully!");
     }
 }
