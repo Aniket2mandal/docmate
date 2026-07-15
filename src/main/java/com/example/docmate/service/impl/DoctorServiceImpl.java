@@ -6,6 +6,7 @@ import com.example.docmate.entity.DoctorDocumentsEntity;
 import com.example.docmate.entity.DoctorEntity;
 import com.example.docmate.entity.DoctorRequestEntity;
 import com.example.docmate.entity.DoctorScheduleEntity;
+import com.example.docmate.entity.PatientEntity;
 import com.example.docmate.entity.RoleEntity;
 import com.example.docmate.entity.UserEntity;
 import com.example.docmate.enums.DoctorRequestStatus;
@@ -34,10 +35,13 @@ import com.example.docmate.repository.DoctorScheduleRepository;
 import com.example.docmate.repository.RoleRepository;
 import com.example.docmate.repository.UserRepository;
 import com.example.docmate.service.DoctorService;
+import com.example.docmate.service.MailService;
 import com.example.docmate.utils.CommonMethods;
 import com.example.docmate.utils.MyConstants;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -60,6 +64,7 @@ import static org.springframework.util.ObjectUtils.isEmpty;
 @Service
 @RequiredArgsConstructor
 public class DoctorServiceImpl implements DoctorService {
+    private final MailService mailService;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
@@ -71,6 +76,7 @@ public class DoctorServiceImpl implements DoctorService {
     private final DoctorDocumentsRepository doctorDocumentsRepository;
     private final DoctorRequestRepository doctorRequestRepository;
 
+    private static final Logger log = LoggerFactory.getLogger(AppointmentServiceImpl.class);
 
     @Override
     public GlobalResponse createDoctor(DoctorRequest doctor,
@@ -129,6 +135,26 @@ public class DoctorServiceImpl implements DoctorService {
         }
 
         handleDocumentUpload(doctorEntity, citizenshipFront, citizenshipBack, license, educationCertificate);
+
+        if(userEntity != null) {
+            String subject = "Welcome to DocMate - Your Doctor Account Has Been Created";
+            String body = "<p>Dear Dr. " + userEntity.getFirstName() + ",</p>"
+                    + "<p>You have been successfully added as a doctor on the DocMate platform by the admin.</p>"
+                    + "<p>You can now log in to your account using the credentials below:</p>"
+                    + "<p><b>Email:</b> " + userEntity.getEmail() + "<br>"
+                    + "<b>Password:</b> " + doctor.getUser().getPassword() + "</p>"
+                    + "<p>For security reasons, we recommend changing your password immediately after logging in.</p>"
+                    + "<p>You can log in to manage your schedule, view appointments, and create medical records for your patients.</p>"
+                    + "<p>Thank you for joining DocMate.</p>"
+                    + "<p>Regards,<br>The DocMate Team</p>";.
+
+
+            try {
+                mailService.sendMail(userEntity.getEmail(), subject, body);
+            } catch (Exception e) {
+                log.error("Failed to send email to {}", userEntity.getEmail(), e);
+            }
+        }
 
         return GlobalResponseBuilder.buildSuccessResponse("Doctor created successfully");
     }
@@ -312,6 +338,12 @@ public class DoctorServiceImpl implements DoctorService {
                                 .orElseThrow(() -> new GlobalException("Appointment " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
                         if (appointmentEntity != null) {
                             doctorScheduleResponse.setAppointmentId(appointmentEntity.getId());
+                        }
+                        if(appointmentEntity.getPatient() != null) {
+                            PatientEntity patientEntity =appointmentEntity.getPatient();
+                            UserEntity userEntity = patientEntity.getUser();
+                            String name=userEntity.getFirstName()+" "+userEntity.getLastName();
+                            doctorScheduleResponse.setPatientName(name);
                         }
                     }
                     return doctorScheduleResponse;
