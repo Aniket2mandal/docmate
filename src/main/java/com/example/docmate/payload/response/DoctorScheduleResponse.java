@@ -18,6 +18,7 @@ import java.time.LocalTime;
 @NoArgsConstructor
 public class DoctorScheduleResponse {
     private String id;
+    private String patientName;
     private DayOfWeek availableDay;
     private ScheduleAvailabilityStatus available;
     private LocalTime startTime;
