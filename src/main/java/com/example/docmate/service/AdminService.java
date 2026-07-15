@@ -16,4 +16,6 @@ public interface AdminService {
     GlobalResponse approveDoctorRequest(String doctorRequestId);
     GlobalResponse getDoctorRequest(String doctorRequestId);
     GlobalResponse rejectDoctorRequest(String doctorRequestId,String reason);
+    GlobalResponse getAllUsers( Pageable pageable);
+    GlobalResponse deleteUser(String userId);
 }

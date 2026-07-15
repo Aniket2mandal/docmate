@@ -5,11 +5,14 @@ import com.cloudinary.utils.ObjectUtils;
 import com.example.docmate.entity.DoctorDocumentsEntity;
 import com.example.docmate.entity.DoctorEntity;
 import com.example.docmate.entity.DoctorRequestEntity;
+import com.example.docmate.entity.PatientEntity;
 import com.example.docmate.entity.RoleEntity;
 import com.example.docmate.entity.UserEntity;
 import com.example.docmate.enums.DoctorRequestStatus;
 import com.example.docmate.enums.Role;
+import com.example.docmate.enums.UserStatus;
 import com.example.docmate.global.exception.GlobalException;
+import com.example.docmate.global.exception.GlobalExceptionHandler;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
 import com.example.docmate.payload.request.RoleRequest;
@@ -19,13 +22,17 @@ import com.example.docmate.payload.response.CommonPageResponse;
 import com.example.docmate.payload.response.DoctorRequestResponse;
 import com.example.docmate.payload.response.DoctorResponse;
 import com.example.docmate.payload.response.RoleResponse;
+import com.example.docmate.payload.response.UserResponse;
 import com.example.docmate.repository.DoctorDocumentsRepository;
 import com.example.docmate.repository.DoctorRepository;
 import com.example.docmate.repository.DoctorRequestRepository;
+import com.example.docmate.repository.PatientRepository;
 import com.example.docmate.repository.RoleRepository;
 import com.example.docmate.repository.UserRepository;
 import com.example.docmate.service.AdminService;
+import com.example.docmate.service.DoctorService;
 import com.example.docmate.service.MailService;
+import com.example.docmate.service.PatientService;
 import com.example.docmate.utils.CommonMethods;
 import com.example.docmate.utils.MyConstants;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +52,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
     private final MailService mailService;
+    private final PatientService patientService;
+    private final DoctorService doctorService;
     private final ModelMapper modelMapper;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
@@ -54,6 +63,7 @@ public class AdminServiceImpl implements AdminService {
     private final DoctorDocumentsRepository doctorDocumentsRepository;
 
     private static final Logger log = LoggerFactory.getLogger(AppointmentServiceImpl.class);
+    private final PatientRepository patientRepository;
 
     public GlobalResponse createRole(RoleRequest role) {
         RoleEntity roleEntity = modelMapper.map(role, RoleEntity.class);
@@ -261,5 +271,65 @@ public class AdminServiceImpl implements AdminService {
         }
 
         return GlobalResponseBuilder.buildSuccessResponse("Doctor request rejected !");
+    }
+
+    @Override
+    public GlobalResponse getAllUsers(Pageable pageable) {
+        String authenticatedEmail = commonMethods.getAuthenticatedUserEmail();
+
+        UserEntity authenticatedUser = userRepository.findByEmailAndStatus(authenticatedEmail, UserStatus.ACTIVE)
+                 .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        boolean viewerIsSuperAdmin = authenticatedUser.getRole().getName().equals(Role.SUPER_ADMIN);
+
+        Page<UserEntity> userEntityPage = userRepository.findAll(pageable);
+
+        List<UserResponse> userResponsesList = userEntityPage.stream()
+                .filter(user -> !authenticatedEmail.equals(user.getEmail())) // exclude self
+                .filter(user -> viewerIsSuperAdmin || !user.getRole().getName().equals(Role.SUPER_ADMIN)) // hide superadmin from non-superadmins
+                .map(user -> {
+                    UserResponse userResponse = new UserResponse();
+                    userResponse.setId(user.getId());
+                    userResponse.setFirstName(user.getFirstName() + " " + user.getLastName());
+                    userResponse.setEmail(user.getEmail());
+                    userResponse.setGender(user.getGender());
+                    userResponse.setImageUrl(user.getImageUrl());
+                    userResponse.setRole(user.getRole() != null ? user.getRole().getName() : null);
+
+                    if (user.getRole() != null && user.getRole().getName().equals(Role.PATIENT)) {
+                        patientRepository.findByUserId(user.getId())
+                                .ifPresent(patientEntity -> userResponse.setIsPatientAvailable(true));
+                    }
+
+                    return userResponse;
+                })
+                .toList();
+
+        CommonPageResponse<UserResponse> response = new CommonPageResponse<>();
+        response.setPaginationInfo(CommonMethods.getPaginationInfo(userEntityPage));
+        response.setData(userResponsesList);
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("User fetched Successfully", response);
+    }
+
+    @Override
+    public GlobalResponse deleteUser(String userId){
+        UserEntity userEntity = userRepository.findById(userId)
+                .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+        if(userEntity.getRole().getName().equals(Role.PATIENT)) {
+            Optional<PatientEntity> patientEntity=patientRepository.findByUserId(userEntity.getId());
+            if(patientEntity.isPresent()) {
+                String patientId=patientEntity.get().getId();
+                patientService.deletePatient(patientId);
+            }
+        }
+        if(userEntity.getRole().getName().equals(Role.DOCTOR)) {
+            Optional<DoctorEntity> doctorEntity=doctorRepository.findByUserId(userEntity.getId());
+            if(doctorEntity.isPresent()) {
+                String doctorId=doctorEntity.get().getId();
+                doctorService.deleteDoctor(doctorId);
+            }
+        }
+        return GlobalResponseBuilder.buildSuccessResponse("User deleted Successfully!");
     }
 }

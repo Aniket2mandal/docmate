@@ -146,7 +146,7 @@ public class DoctorServiceImpl implements DoctorService {
                     + "<p>For security reasons, we recommend changing your password immediately after logging in.</p>"
                     + "<p>You can log in to manage your schedule, view appointments, and create medical records for your patients.</p>"
                     + "<p>Thank you for joining DocMate.</p>"
-                    + "<p>Regards,<br>The DocMate Team</p>";.
+                    + "<p>Regards,<br>The DocMate Team</p>";
 
 
             try {
