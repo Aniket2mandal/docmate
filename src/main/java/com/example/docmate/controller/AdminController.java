@@ -140,9 +140,16 @@ public class AdminController {
         return ResponseEntity.ok(adminService.rejectDoctorRequest(doctorRequestId,reason));
     }
 
-//    @GetMapping("/get-all-users")
-//    public ResponseEntity<GlobalResponse> getAllUsers() {
-//        return ResponseEntity
-//    }
+    @GetMapping("/get-all-users")
+    public ResponseEntity<GlobalResponse> getAllUsers(@RequestParam(defaultValue = "0") int page,
+                                                      @RequestParam(defaultValue = "9") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(adminService.getAllUsers(pageable));
+    }
+
+    @DeleteMapping("/delete-user/{userId}")
+    public ResponseEntity<GlobalResponse> deleteUser(@PathVariable String userId) {
+        return ResponseEntity.ok(adminService.deleteUser(userId));
+    }
 
 }
