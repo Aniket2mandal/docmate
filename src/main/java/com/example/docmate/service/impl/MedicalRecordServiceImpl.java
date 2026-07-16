@@ -15,6 +15,7 @@ import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
 import com.example.docmate.payload.request.MedicalRecordRequest;
 import com.example.docmate.payload.request.MedicationRequest;
+import com.example.docmate.payload.response.CommonPageResponse;
 import com.example.docmate.payload.response.DoctorResponse;
 import com.example.docmate.payload.response.MedicalRecordResponse;
 import com.example.docmate.payload.response.MedicationResponse;
@@ -36,6 +37,8 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -296,6 +299,23 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
 
         return GlobalResponseBuilder.buildSuccessResponseWithData("Medical record retrieved successfully", response);
 
+    }
+
+
+    @Override
+    public  GlobalResponse getMedicineReport(String patientId, Pageable pageable){
+
+        Page<MedicationEntity> medicationEntities = medicationRepository.findByPatientId(patientId,pageable);
+
+        List<MedicationResponse> medicationResponses =medicationEntities.getContent().stream()
+                .map(medication->modelMapper.map(medication,MedicationResponse.class)).toList();
+
+        CommonPageResponse<MedicationResponse> response = new CommonPageResponse<>();
+        response.setPaginationInfo(CommonMethods.getPaginationInfo(medicationEntities));
+        response.setData(medicationResponses);
+
+
+        return GlobalResponseBuilder.buildSuccessResponseWithData("All medication fetched successfully", response);
     }
 
     private MedicalRecordResponse mapMedicalRecordDetails(MedicalRecordEntity medicalRecord) {
