@@ -254,17 +254,10 @@ public class AdminServiceImpl implements AdminService {
 
         doctorRequestRepository.save(doctorRequestEntity);
 
-        commonMethods.deleteFiles(doctorRequestEntity.getCitizenshipFrontPublicId()
-                , doctorRequestEntity.getCitizenshipFront().toLowerCase().endsWith(".pdf") ? "raw" : "image");
-
-        commonMethods.deleteFiles(doctorRequestEntity.getCitizenshipBackPublicId(),
-                doctorRequestEntity.getCitizenshipBack().toLowerCase().endsWith(".pdf") ? "raw" : "image");
-
-        commonMethods.deleteFiles(doctorRequestEntity.getDoctorLicensePublicId(),
-                doctorRequestEntity.getDoctorLicense().toLowerCase().endsWith(".pdf") ? "raw" : "image");
-
-        commonMethods.deleteFiles(doctorRequestEntity.getEducationCertificatePublicId(),
-                doctorRequestEntity.getEducationCertificate().toLowerCase().endsWith(".pdf") ? "raw" : "image");
+        commonMethods.deleteFiles(doctorRequestEntity.getCitizenshipFrontPublicId());
+        commonMethods.deleteFiles(doctorRequestEntity.getCitizenshipBackPublicId());
+        commonMethods.deleteFiles(doctorRequestEntity.getDoctorLicensePublicId());
+        commonMethods.deleteFiles(doctorRequestEntity.getEducationCertificatePublicId());
 
         commonMethods.deleteSubFolder("doctor-document-request", doctorRequestEntity.getId());
 
