@@ -7,6 +7,7 @@ import com.example.docmate.payload.request.DoctorRequest;
 import com.example.docmate.payload.request.DoctorScheduleRequest;
 import com.example.docmate.payload.request.UserRequest;
 import com.example.docmate.service.DoctorService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class DoctorController {
     private final DoctorService doctorService;
  @PostMapping("/create-schedule")
-    public ResponseEntity<GlobalResponse> createDoctorSchedule(@RequestBody DoctorScheduleRequest scheduleRequest){
+    public ResponseEntity<GlobalResponse> createDoctorSchedule(@Valid @RequestBody DoctorScheduleRequest scheduleRequest){
      return ResponseEntity.ok(doctorService.createDoctorSchedule(scheduleRequest));
  }
     @GetMapping("/get-all-schedule/{doctorId}")
