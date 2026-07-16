@@ -35,6 +35,7 @@ import com.example.docmate.service.MailService;
 import com.example.docmate.service.PatientService;
 import com.example.docmate.utils.CommonMethods;
 import com.example.docmate.utils.MyConstants;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -117,11 +118,13 @@ public class AdminServiceImpl implements AdminService {
         return GlobalResponseBuilder.buildSuccessResponseWithData(" Doctor request fetched", doctorRequestResponse);
     }
 
+   @Transactional
     @Override
     public GlobalResponse approveDoctorRequest(String doctorRequestId) {
 
         DoctorRequestEntity doctorRequestEntity = doctorRequestRepository.findById(doctorRequestId)
                 .orElseThrow(() -> new GlobalException("Request " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
         doctorRequestEntity.setRequestStatus(DoctorRequestStatus.APPROVED);
 
         RoleEntity roleEntity = roleRepository.findByName(Role.DOCTOR)
@@ -219,12 +222,15 @@ public class AdminServiceImpl implements AdminService {
 
         String email=doctorRequestEntity.getEmail();
         String subject = "Docmate Application Approved";
-        String body = "Dear " + doctorRequestEntity.getFirstName() + ",\n\n"
-                + "Congratulations! Your application to join Docmate as a doctor has been approved.\n\n"
-                + "You can now log in to your Docmate account and start managing your profile, "
-                + "availability, and appointments.\n\n"
-                + "Regards,\n"
-                + "The Docmate Team";
+       String body = "Dear " + doctorRequestEntity.getFirstName() + ",\n\n"
+               + "Congratulations! Your application to join DocMate as a doctor has been approved.\n\n"
+               + "You can now log in to your DocMate account using the following credentials:\n\n"
+               + "Email: " + doctorRequestEntity.getEmail() + "\n"
+               + "Password: " + doctorRequestEntity.getPassword() + "\n\n"
+               + "For security reasons, please change your password immediately after your first login.\n\n"
+               + "You can now manage your profile, availability, appointments, and consultations through the DocMate platform.\n\n"
+               + "Regards,\n"
+               + "The DocMate Team";
 
         try {
             mailService.sendMail(email, subject, body);
