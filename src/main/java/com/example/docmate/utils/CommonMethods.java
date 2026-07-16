@@ -82,15 +82,12 @@ public class CommonMethods {
                 );
             }
 
-            String resourceType = contentType.equals("application/pdf")
-                    ? "raw"
-                    : "image";
 
             Map uploadResult = cloudinary.uploader().upload(
                     file.getBytes(),
                     ObjectUtils.asMap(
                             "folder", path,
-                            "resource_type", resourceType
+                            "resource_type", "auto"
                     )
             );
 
@@ -104,9 +101,7 @@ public class CommonMethods {
 
                 cloudinary.uploader().destroy(
                         oldPublicId,
-                        ObjectUtils.asMap(
-                                "resource_type", resourceType
-                        )
+                        ObjectUtils.emptyMap()
                 );
             }
 
@@ -137,22 +132,18 @@ public class CommonMethods {
 
             byte[] bytes = url.openStream().readAllBytes();
 
-            String resourceType = documentUrl.toLowerCase().endsWith(".pdf")
-                    ? "raw"
-                    : "image";
-
             Map uploadResult = cloudinary.uploader().upload(
                     bytes,
                     ObjectUtils.asMap(
                             "folder", newPath,
-                            "resource_type", resourceType
+                            "resource_type", "auto"
                     )
             );
 
             String newUrl = uploadResult.get("secure_url").toString();
             String newPublicId = uploadResult.get("public_id").toString();
 
-            deleteFiles(oldPublicId,resourceType);
+            deleteFiles(oldPublicId);
 
             return CloudinaryUploadResponse.builder()
                     .url(newUrl)
@@ -167,13 +158,11 @@ public class CommonMethods {
         }
     }
 
-    public void deleteFiles(String oldPublicId, String resourceType){
+    public void deleteFiles(String oldPublicId){
 
         try {
             if (oldPublicId != null && !oldPublicId.isBlank()) {
-                cloudinary.uploader().destroy(oldPublicId,  ObjectUtils.asMap(
-                        "resource_type", resourceType
-                ));
+                cloudinary.uploader().destroy(oldPublicId, ObjectUtils.emptyMap());
             }
         }catch (Exception e) {
             throw new GlobalException(

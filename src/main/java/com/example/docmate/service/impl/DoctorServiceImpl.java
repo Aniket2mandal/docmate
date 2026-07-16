@@ -475,17 +475,13 @@ public class DoctorServiceImpl implements DoctorService {
         // Delete the doctor
         doctorRepository.delete(doctorEntity);
 
-        commonMethods.deleteFiles(doctorDocumentsEntity.getCitizenshipFrontPublicId()
-                , doctorDocumentsEntity.getCitizenshipFront().toLowerCase().endsWith(".pdf") ? "raw" : "image");
+        commonMethods.deleteFiles(doctorDocumentsEntity.getCitizenshipFrontPublicId());
 
-        commonMethods.deleteFiles(doctorDocumentsEntity.getCitizenshipBackPublicId(),
-                doctorDocumentsEntity.getCitizenshipBack().toLowerCase().endsWith(".pdf") ? "raw" : "image");
+        commonMethods.deleteFiles(doctorDocumentsEntity.getCitizenshipBackPublicId());
 
-        commonMethods.deleteFiles(doctorDocumentsEntity.getDoctorLicensePublicId(),
-                doctorDocumentsEntity.getDoctorLicense().toLowerCase().endsWith(".pdf") ? "raw" : "image");
+        commonMethods.deleteFiles(doctorDocumentsEntity.getDoctorLicensePublicId());
 
-        commonMethods.deleteFiles(doctorDocumentsEntity.getEducationCertificatePublicId(),
-                doctorDocumentsEntity.getEducationCertificate().toLowerCase().endsWith(".pdf") ? "raw" : "image");
+        commonMethods.deleteFiles(doctorDocumentsEntity.getEducationCertificatePublicId());
 
         commonMethods.deleteSubFolder("doctor-document",doctorEntity.getId());
 
