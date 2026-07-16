@@ -2,6 +2,7 @@ package com.example.docmate.service;
 
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.payload.request.MedicalRecordRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 
@@ -10,4 +11,5 @@ public interface MedicalRecordService {
     GlobalResponse getAllMedicalRecords();
     GlobalResponse getMedicalRecordByAppointmentId(String appointmentId);
     GlobalResponse getMedicalRecordById(String medicalRecordId);
+    GlobalResponse getMedicineReport(String patientId, Pageable pageable);
 }

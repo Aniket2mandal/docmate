@@ -4,12 +4,15 @@ import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.payload.request.MedicalRecordRequest;
 import com.example.docmate.service.MedicalRecordService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,4 +47,13 @@ public class MedicalRecordController {
     public ResponseEntity<GlobalResponse> getMedicalRecordById(@PathVariable String medicalRecordId) {
         return ResponseEntity.ok(medicalRecordService.getMedicalRecordById(medicalRecordId));
     }
+
+    @GetMapping("/medicine-reports/{patientId}")
+    public ResponseEntity<GlobalResponse> getMedicineRecordByPatientId(@PathVariable String patientId,
+                                                                       @RequestParam(defaultValue = "0") int page,
+                                                                       @RequestParam(defaultValue = "9") int size){
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(medicalRecordService.getMedicineReport(patientId,pageable));
+    }
+
 }
