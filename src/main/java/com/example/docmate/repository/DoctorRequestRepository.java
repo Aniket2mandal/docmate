@@ -16,4 +16,6 @@ public interface DoctorRequestRepository extends JpaRepository<DoctorRequestEnti
 
     Page<DoctorRequestEntity> findByRequestStatus(DoctorRequestStatus requestStatus, Pageable pageable);
     Optional<DoctorRequestEntity> findById(String doctorId);
+    boolean existsByEmail(String email);
+    boolean existsByPhone(String phone);
 }

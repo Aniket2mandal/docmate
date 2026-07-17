@@ -129,6 +129,10 @@ public class AuthServiceImpl implements AuthService {
                         + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
             }
 
+            if(userRepository.existsByPhone(patient.getUser().getPhone())){
+                throw new GlobalException("User with phone " + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+            }
+
             RoleEntity roleEntity = roleRepository.findByName(Role.PATIENT)
                     .orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
