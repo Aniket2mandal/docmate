@@ -75,6 +75,7 @@ public class AdminServiceImpl implements AdminService {
     public GlobalResponse getAllRole() {
         List<RoleEntity> roleEntityList = roleRepository.findAll();
         List<RoleResponse> roleResponseList = roleEntityList.stream()
+                .filter(role->role.getName() != Role.ADMIN)
                 .map(role -> modelMapper.map(role, RoleResponse.class))
                 .toList();
         return GlobalResponseBuilder.buildSuccessResponseWithData("All role fetched", roleResponseList);
