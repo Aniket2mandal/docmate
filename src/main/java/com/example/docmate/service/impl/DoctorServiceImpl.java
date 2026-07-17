@@ -89,6 +89,11 @@ public class DoctorServiceImpl implements DoctorService {
             if (userRepository.existsByEmail(doctor.getUser().getEmail())) {
                 throw new GlobalException("User with email " + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
             }
+
+            if(userRepository.existsByPhone(doctor.getUser().getPhone())){
+                throw new GlobalException("User with phone " + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+            }
+
             RoleEntity roleEntity = roleRepository.findByName(Role.DOCTOR)
                     .orElseThrow(() -> new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 //            userEntity=UserEntity.builder()
@@ -200,6 +205,15 @@ public class DoctorServiceImpl implements DoctorService {
         DoctorEntity doctorEntity = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new GlobalException("Doctor " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
         if (doctorRequest.getUser() != null) {
+
+            if (userRepository.existsByEmail(doctorRequest.getUser().getEmail())) {
+                throw new GlobalException("Doctor with email " + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+            }
+
+            if(userRepository.existsByPhone(doctorRequest.getUser().getPhone())){
+                throw new GlobalException("Doctor with phone " + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+            }
+
             UserEntity userEntity = userRepository.findById(doctorEntity.getUserId())
                     .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
             modelMapper.map(doctorRequest.getUser(), userEntity);
@@ -460,8 +474,11 @@ public class DoctorServiceImpl implements DoctorService {
         List<DoctorScheduleEntity> doctorScheduleEntities = doctorScheduleRepository.findByDoctorId(doctorId);
 
         for (DoctorScheduleEntity schedule : doctorScheduleEntities) {
-            if (schedule.getAvailable() == ScheduleAvailabilityStatus.BOOKED) {
+            if (schedule.getAvailable() == ScheduleAvailabilityStatus.BOOKED ) {
                 throw new GlobalException("Cannot delete a doctor with booked schedules", HttpStatus.BAD_REQUEST);
+            }
+            if(schedule.getAvailable() == ScheduleAvailabilityStatus.COMPLETED){
+                throw new GlobalException("Cannot delete a doctor with completed appointments", HttpStatus.BAD_REQUEST);
             }
         }
 
@@ -528,6 +545,15 @@ public class DoctorServiceImpl implements DoctorService {
 
 
         UserRequest userRequest = doctor.getUser();
+
+        if (doctorRequestRepository.existsByEmail(userRequest.getEmail())) {
+            throw new GlobalException("Request with this email " + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+        }
+
+        if(doctorRequestRepository.existsByPhone(doctor.getUser().getPhone())){
+            throw new GlobalException("Request with phone " + MyConstants.ERR_MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+        }
+
        DoctorRequestEntity doctorRequestEntity = new DoctorRequestEntity();
 
        doctorRequestEntity.setFirstName(userRequest.getFirstName());
