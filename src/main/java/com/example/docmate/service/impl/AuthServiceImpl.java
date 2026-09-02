@@ -8,6 +8,7 @@ import com.example.docmate.entity.PatientEntity;
 import com.example.docmate.entity.RefreshTokenEntity;
 import com.example.docmate.entity.RoleEntity;
 import com.example.docmate.entity.UserEntity;
+import com.example.docmate.enums.OtpStatus;
 import com.example.docmate.enums.Role;
 import com.example.docmate.enums.UserStatus;
 import com.example.docmate.global.exception.GlobalException;
@@ -55,6 +56,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -395,10 +397,13 @@ public class AuthServiceImpl implements AuthService {
             throw new GlobalException("OTP has expired", HttpStatus.BAD_REQUEST);
         }
 
-        passwordResetOtpEntity.setIsVerified(true);
+        passwordResetOtpEntity.setIsVerified(OtpStatus.VERIFIED);
+        String resetToken = UUID.randomUUID().toString();
+
+        passwordResetOtpEntity.setResetToken(resetToken);
         passwordResetOtpRepository.save(passwordResetOtpEntity);
 
-        return GlobalResponseBuilder.buildSuccessResponse("OTP verified!");
+        return GlobalResponseBuilder.buildSuccessResponse(resetToken);
     }
 
     @Override
@@ -406,14 +411,16 @@ public class AuthServiceImpl implements AuthService {
         UserEntity user = userRepository.findByEmailAndStatus(request.getEmail(), UserStatus.ACTIVE)
                 .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        PasswordResetOtpEntity passwordResetOtpEntity = passwordResetOtpRepository.findByUserIdAndOTP(user.getId(),request.getOtp())
+
+        PasswordResetOtpEntity passwordResetOtpEntity = passwordResetOtpRepository.findByUserIdAndResetToken(user.getId(),request.getResetToken())
                 .orElseThrow(() -> new GlobalException("otp " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
 
         if (passwordResetOtpEntity.getExpiryTime().isBefore(LocalDateTime.now())) {
             throw new GlobalException("OTP has expired", HttpStatus.BAD_REQUEST);
         }
 
-        if(!passwordResetOtpEntity.getIsVerified()){
+        if(!passwordResetOtpEntity.getIsVerified().equals(OtpStatus.VERIFIED)){
             throw new GlobalException("OTP is not verified", HttpStatus.BAD_REQUEST);
         }
 
