@@ -1,7 +1,10 @@
 package com.example.docmate.entity;
 
+import com.example.docmate.enums.OtpStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,8 +32,12 @@ public class PasswordResetOtpEntity extends BaseEntity {
     @Column(name = "expiry_time", nullable = false)
     private LocalDateTime expiryTime;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "is_verified")
     @Builder.Default
-    private Boolean isVerified = false;
+    private OtpStatus isVerified = OtpStatus.PENDING;
+
+    @Column(unique = true)
+    private String resetToken;
 
 }
