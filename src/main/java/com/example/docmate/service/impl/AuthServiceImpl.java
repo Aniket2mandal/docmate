@@ -384,7 +384,7 @@ public class AuthServiceImpl implements AuthService {
         UserEntity user = userRepository.findByEmailAndStatus(request.getEmail(), UserStatus.ACTIVE)
                 .orElseThrow(() -> new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        PasswordResetOtpEntity passwordResetOtpEntity = passwordResetOtpRepository.findByUserId(user.getId())
+        PasswordResetOtpEntity passwordResetOtpEntity = passwordResetOtpRepository.findByUserIdAndOTP(user.getId(),request.getOtp())
                 .orElseThrow(() -> new GlobalException("otp " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         if (!request.getOtp().equals(passwordResetOtpEntity.getOtp())) {
