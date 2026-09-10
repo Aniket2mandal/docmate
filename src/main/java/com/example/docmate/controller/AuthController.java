@@ -2,6 +2,7 @@ package com.example.docmate.controller;
 
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.payload.request.ForgotPasswordRequest;
+import com.example.docmate.payload.request.GoogleLoginRequest;
 import com.example.docmate.payload.request.LoginRequest;
 import com.example.docmate.payload.request.PatientRequest;
 import com.example.docmate.payload.request.UserRequest;
@@ -72,4 +73,14 @@ public class AuthController {
          String userEmail=commonMethods.getAuthenticatedUserEmail();
         return ResponseEntity.ok(authService.logoutUser(userEmail));
      }
+
+
+    @PostMapping("/google/patient")
+    public ResponseEntity<GlobalResponse> googlePatientLogin(
+            @RequestBody GoogleLoginRequest request
+    ) {
+        GlobalResponse response = authService.googlePatientLogin(request);
+
+        return ResponseEntity.ok(response);
+    }
 }
