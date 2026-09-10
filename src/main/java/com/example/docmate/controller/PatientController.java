@@ -1,6 +1,7 @@
 package com.example.docmate.controller;
 
 import com.example.docmate.global.response.GlobalResponse;
+import com.example.docmate.payload.request.PatientRequest;
 import com.example.docmate.payload.request.RatingRequest;
 import com.example.docmate.service.DoctorService;
 import com.example.docmate.service.PatientService;
@@ -22,6 +23,12 @@ public class PatientController {
     @PostMapping("/rate-doctor")
     public ResponseEntity<GlobalResponse> rateDoctor(@RequestBody RatingRequest ratingRequest) {
         return ResponseEntity.ok(patientService.rateDoctor(ratingRequest));
+    }
+
+    @PostMapping("/update-patient-profile/{patientId}")
+    public ResponseEntity<GlobalResponse> updatePatientProfile(@PathVariable String patientId,
+                                                               @RequestBody PatientRequest patientRequest) {
+        return ResponseEntity.ok(patientService.updatePatientProfile(patientId, patientRequest));
     }
 
 }
