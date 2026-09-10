@@ -2,6 +2,7 @@ package com.example.docmate.service;
 
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.payload.request.ForgotPasswordRequest;
+import com.example.docmate.payload.request.GoogleLoginRequest;
 import com.example.docmate.payload.request.LoginRequest;
 import com.example.docmate.payload.request.PatientRequest;
 import com.example.docmate.payload.request.UserRequest;
@@ -18,4 +19,5 @@ public interface AuthService {
     GlobalResponse sendOtp(ForgotPasswordRequest request);
     GlobalResponse verifyOtp(ForgotPasswordRequest request);
     GlobalResponse updatePassword(ForgotPasswordRequest request);
+    GlobalResponse googlePatientLogin(GoogleLoginRequest request);
 }

@@ -1,5 +1,6 @@
 package com.example.docmate.entity;
 
+import com.example.docmate.enums.AuthProvider;
 import com.example.docmate.enums.Gender;
 import com.example.docmate.enums.UserStatus;
 import jakarta.persistence.*;
@@ -49,6 +50,14 @@ public class UserEntity extends BaseEntity {
 
     @Column(name = "image_public_id")
     private String imagePublicId;
+
+    @Column(name = "google_id", unique = true)
+    private String googleId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "auth_provider")
+    @Builder.Default
+    private AuthProvider authProvider = AuthProvider.LOCAL;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", referencedColumnName = "id")

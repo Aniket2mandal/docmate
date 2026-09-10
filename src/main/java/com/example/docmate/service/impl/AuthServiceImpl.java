@@ -8,6 +8,7 @@ import com.example.docmate.entity.PatientEntity;
 import com.example.docmate.entity.RefreshTokenEntity;
 import com.example.docmate.entity.RoleEntity;
 import com.example.docmate.entity.UserEntity;
+import com.example.docmate.enums.AuthProvider;
 import com.example.docmate.enums.OtpStatus;
 import com.example.docmate.enums.Role;
 import com.example.docmate.enums.UserStatus;
@@ -15,6 +16,7 @@ import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
 import com.example.docmate.payload.request.ForgotPasswordRequest;
+import com.example.docmate.payload.request.GoogleLoginRequest;
 import com.example.docmate.payload.request.LoginRequest;
 import com.example.docmate.payload.request.PatientRequest;
 import com.example.docmate.payload.request.UserRequest;
@@ -35,12 +37,17 @@ import com.example.docmate.service.RefreshTokenService;
 import com.example.docmate.utils.CommonMethods;
 import com.example.docmate.utils.JwtUtils;
 import com.example.docmate.utils.MyConstants;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.catalina.User;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -56,6 +63,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -68,6 +76,9 @@ import static org.springframework.util.ObjectUtils.isEmpty;
 @RequiredArgsConstructor
 @Transactional
 public class AuthServiceImpl implements AuthService {
+
+    @Value("${google.client-id}")
+    private String googleClientId;
 
     private final MailService mailService;
     private final ModelMapper modelMapper;
@@ -435,4 +446,218 @@ public class AuthServiceImpl implements AuthService {
 
         return GlobalResponseBuilder.buildSuccessResponse("Password Changed!");
     }
+
+
+    @Override
+    public GlobalResponse googlePatientLogin(GoogleLoginRequest request) {
+
+        // 1. Verify token received from frontend
+        GoogleIdToken.Payload payload =
+                verifyGoogleToken(request.getIdToken());
+
+        // 2. Get VERIFIED information from Google
+        String googleId = payload.getSubject();
+        String email = payload.getEmail();
+        String firstName = (String) payload.get("given_name");
+        String lastName = (String) payload.get("family_name");
+        String imageUrl = (String) payload.get("picture");
+
+
+        // 3. Find user directly using email
+        UserEntity userEntity =
+                userRepository.findByEmail(email)
+                        .orElse(null);
+
+
+        // 4. If user does NOT exist → create new PATIENT
+        if (userEntity == null) {
+
+            RoleEntity roleEntity =
+                    roleRepository.findByName(Role.PATIENT)
+                            .orElseThrow(() ->
+                                    new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+
+
+            userEntity = UserEntity.builder()
+                    .firstName(firstName)
+                    .lastName(lastName)
+                    .email(email)
+
+                    // random password because password column
+                    // should not be null
+                    .password(
+                            passwordEncoder.encode(
+                                   "password"
+                            )
+                    )
+
+                    .googleId(googleId)
+                    .authProvider(AuthProvider.GOOGLE)
+                    .imageUrl(imageUrl)
+                    .role(roleEntity)
+                    .build();
+
+
+            userRepository.save(userEntity);
+
+
+            // Create corresponding patient
+            PatientEntity patientEntity =
+                    PatientEntity.builder()
+                            .user(userEntity)
+                            .build();
+
+            patientRepository.save(patientEntity);
+
+        } else {
+
+            // 5. User already exists.
+            // Only PATIENT can use this endpoint.
+            if (userEntity.getRole().getName() != Role.PATIENT) {
+                throw new GlobalException("Role " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND);
+            }
+
+
+            // If existing LOCAL patient is using Google
+            // for the first time, link Google account.
+            if (userEntity.getGoogleId() == null) {
+
+                userEntity.setGoogleId(googleId);
+
+                if (userEntity.getImageUrl() == null) {
+                    userEntity.setImageUrl(imageUrl);
+                }
+
+                userRepository.save(userEntity);
+            }
+        }
+
+
+        // 6. Check user status
+        if (userEntity.getStatus() != UserStatus.ACTIVE) {
+
+            throw new GlobalException("User " + MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+
+
+        // 7. Generate access token
+        String accessToken =
+                jwtUtils.generateAccessToken(
+                        userEntity.getEmail(),
+                        userEntity.getRole().getName(),
+                        userEntity.getId()
+                );
+
+
+        // 8. Generate refresh token
+        String refreshToken =
+                jwtUtils.generateRefreshToken(
+                        userEntity.getEmail()
+                );
+
+
+        // 9. Save refresh token
+        refreshTokenService.createRefreshToken(
+                userEntity.getEmail(),
+                refreshToken
+        );
+
+
+        // 10. Get patient ID
+        String patientId =
+                patientRepository
+                        .findByUserId(userEntity.getId())
+                        .map(PatientEntity::getId)
+                        .orElse(null);
+
+
+        // 11. Build response
+        LoginResponse loginResponse =
+                LoginResponse.builder()
+                        .accessToken(accessToken)
+                        .refreshToken(refreshToken)
+                        .userId(userEntity.getId())
+                        .name(
+                                userEntity.getFirstName()
+                                        + " "
+                                        + userEntity.getLastName()
+                        )
+                        .patientId(patientId)
+                        .email(userEntity.getEmail())
+                        .role(userEntity.getRole().getName())
+                        .build();
+
+
+        return GlobalResponseBuilder
+                .buildSuccessResponseWithData(
+                        "Google login successful",
+                        loginResponse
+                );
+    }
+
+
+    private GoogleIdToken.Payload verifyGoogleToken(
+            String token
+    ) {
+
+        try {
+
+            GoogleIdTokenVerifier verifier =
+                    new GoogleIdTokenVerifier.Builder(
+                            new NetHttpTransport(),
+                            GsonFactory.getDefaultInstance()
+                    )
+                            .setAudience(
+                                    Collections.singletonList(
+                                            googleClientId
+                                    )
+                            )
+                            .build();
+
+
+            GoogleIdToken idToken =
+                    verifier.verify(token);
+
+
+            if (idToken == null) {
+
+                throw new GlobalException(
+                        "Invalid Google token",
+                        HttpStatus.UNAUTHORIZED
+                );
+            }
+
+
+            GoogleIdToken.Payload payload =
+                    idToken.getPayload();
+
+
+            // Optional but recommended
+            if (!Boolean.TRUE.equals(
+                    payload.getEmailVerified()
+            )) {
+
+                throw new GlobalException(
+                        "Google email is not verified",
+                        HttpStatus.UNAUTHORIZED
+                );
+            }
+
+
+            return payload;
+
+        } catch (GlobalException e) {
+
+            throw e;
+
+        } catch (Exception e) {
+
+            throw new GlobalException(
+                    "Google authentication failed",
+                    HttpStatus.UNAUTHORIZED
+            );
+        }
+    }
+
 }

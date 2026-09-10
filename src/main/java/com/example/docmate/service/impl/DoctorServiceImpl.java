@@ -543,7 +543,7 @@ public class DoctorServiceImpl implements DoctorService {
                                   MultipartFile citizenshipFront,MultipartFile citizenshipBack,
                                   MultipartFile license, MultipartFile educationCertificate){
 
-
+//BUG THAT IF BY EMAIL OR PHONE IS RESJECTED THEN STILL IT SHOWS ALLREADY EXISTS AND NOT REJECTED NOT FIXED
         UserRequest userRequest = doctor.getUser();
 
         if (doctorRequestRepository.existsByEmail(userRequest.getEmail())) {
