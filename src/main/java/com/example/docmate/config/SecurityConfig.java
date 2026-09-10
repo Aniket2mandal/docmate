@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/user-profile","/auth/upload-user-image/**").authenticated()
                         .requestMatchers("/doctor/get-all-schedule/{doctorId}","/doctor/get-available-slots/{doctorId}").authenticated()
                         .requestMatchers("/doctor/**").hasRole("DOCTOR")
+                        .requestMatchers("/patient/**").hasRole("PATIENT")
                         .requestMatchers("/appointment/**").authenticated()
                         .anyRequest().permitAll()
                 )

@@ -5,11 +5,16 @@ import com.example.docmate.entity.DoctorEntity;
 import com.example.docmate.entity.DoctorRatingEntity;
 import com.example.docmate.entity.DoctorScheduleEntity;
 import com.example.docmate.entity.PatientEntity;
+import com.example.docmate.entity.RoleEntity;
+import com.example.docmate.entity.UserEntity;
 import com.example.docmate.enums.AppointmentStatus;
+import com.example.docmate.enums.Role;
 import com.example.docmate.global.exception.GlobalException;
 import com.example.docmate.global.response.GlobalResponse;
 import com.example.docmate.global.response.GlobalResponseBuilder;
+import com.example.docmate.payload.request.PatientRequest;
 import com.example.docmate.payload.request.RatingRequest;
+import com.example.docmate.payload.request.UserRequest;
 import com.example.docmate.payload.response.CommonPageResponse;
 import com.example.docmate.payload.response.DoctorRequestResponse;
 import com.example.docmate.payload.response.PatientResponse;
@@ -19,6 +24,7 @@ import com.example.docmate.repository.AppointmentRepository;
 import com.example.docmate.repository.DoctorRatingRepository;
 import com.example.docmate.repository.DoctorRepository;
 import com.example.docmate.repository.PatientRepository;
+import com.example.docmate.repository.UserRepository;
 import com.example.docmate.service.PatientService;
 import com.example.docmate.utils.CommonMethods;
 import com.example.docmate.utils.MyConstants;
@@ -34,6 +40,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static org.springframework.util.ObjectUtils.isEmpty;
+
 @Service
 @RequiredArgsConstructor
 public class PatientServiceImpl implements PatientService {
@@ -42,6 +50,7 @@ public class PatientServiceImpl implements PatientService {
     private final AppointmentRepository appointmentRepository;
     private final DoctorRatingRepository doctorRatingRepository;
     private final DoctorRepository doctorRepository;
+    private final UserRepository userRepository;
 
     @Override
     public GlobalResponse getAllPatient(Pageable pageable) {
@@ -128,6 +137,33 @@ public class PatientServiceImpl implements PatientService {
         doctorRepository.save(doctor);
 
         return GlobalResponseBuilder.buildSuccessResponse("Doctor rated successfully");
+    }
+
+    @Override
+    public GlobalResponse updatePatientProfile(String patientId, PatientRequest patientRequest){
+
+        PatientEntity patientEntity = patientRepository.findById(patientId)
+                .orElseThrow(() -> new GlobalException("Patient"+MyConstants.ERR_MSG_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        UserEntity userEntity= patientEntity.getUser();
+
+        UserRequest userRequest = patientRequest.getUser();
+
+      if(userEntity != null && userRequest != null){
+          userEntity.setPhone(userRequest.getPhone());
+          userEntity.setAddress(userRequest.getAddress());
+          userEntity.setProvince(userRequest.getProvince());
+
+          userRepository.save(userEntity);
+      }
+
+          patientEntity.setAge(patientRequest.getAge());
+          patientEntity.setHeight(patientRequest.getHeight());
+          patientEntity.setWeight(patientRequest.getWeight());
+
+          patientRepository.save(patientEntity);
+
+        return GlobalResponseBuilder.buildSuccessResponse("Profile updated successfully");
     }
 
 
