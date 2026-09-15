@@ -209,8 +209,8 @@ public class DoctorRecommendationServiceImpl implements DoctorRecommendationServ
         }
 
         String doctorSpecialization = doctor.getSpecialization()
-                .trim()
-                .toLowerCase();
+                .trim();
+//                .toLowerCase();
 
         int index = normalizedSpecializations.indexOf(doctorSpecialization);
 
