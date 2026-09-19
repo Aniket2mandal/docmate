@@ -20,7 +20,10 @@ public class DocmateApplication {
 		return new WebMvcConfigurer() {
 			@Override
 			public void addCorsMappings(CorsRegistry corsRegistry) {
-				corsRegistry.addMapping("/**").allowedOrigins("*").allowedMethods("*").allowedHeaders("*");
+				corsRegistry.addMapping("/**")
+						.allowedOrigins("https://docmate-frontend-seven.vercel.app",
+								"http://localhost:5173")
+						.allowedMethods("*").allowedHeaders("*");
 			}
 		};
 	}
